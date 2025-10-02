@@ -41,4 +41,13 @@ SEED = [123, 456]
 '''
 What level of logs do you want to store?
 '''
+# Write in uppercase the desired log level, choose from:    
+    # DEBUG: Technical details (e.g., "Value of X=5", "Iteration 3/10"). Useful only for developers.
+    # INFO: Normal events (e.g., "Loading file X", "Process Y completed").
+    # WARNING: Unusual but manageable situations (e.g., "File does not exist, a new one will be created").
+    # ERROR: Issues that affect operation but do not crash the system (e.g., "Could not read X, using default value").
+    # CRITICAL: Severe errors that halt execution (e.g., "Out of memory", "API key not configured").
+
 EXP_LOG_LEVEL = "DEBUG"
+Matplotlib_LOG_LEVEL = "WARNING"
+PIL_LOG_LEVEL = "WARNING"

@@ -504,7 +504,29 @@ def log(config):
             handlers=handlers
         )
 
-        return log_level
+        mat_log_levels={
+            "DEBUG": "debug",
+            "INFO": "info",
+            "WARNING": "warning",
+            "ERROR": "error",
+            "CRITICAL": "critical"
+        }
+        mat_log_level=mat_log_levels.get(Matplotlib_LOG_LEVEL.upper(), "warning")
+        matplotlib.set_loglevel(mat_log_level)
+
+        # Configure PIL (Pillow) logging
+        plog_levels = {
+            "DEBUG": logging.DEBUG, 
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL
+        }
+        plog_level = plog_levels.get(PIL_LOG_LEVEL.upper(), logging.WARNING)
+        logging.getLogger('PIL').setLevel(plog_level)
+
+        return log_level, mat_log_level,plog_level
+    
     except Exception as e:
         logger.critical(f'Critical error while setting up logging: {str(e)}')
         raise
