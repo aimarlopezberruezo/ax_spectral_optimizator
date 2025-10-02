@@ -73,3 +73,4 @@ What level of logs do you want to store?
 EXP_LOG_LEVEL = "DEBUG"
 Matplotlib_LOG_LEVEL = "WARNING"
 PIL_LOG_LEVEL = "WARNING"
+Pyvisa_LOG_LEVEL = "WARNING"

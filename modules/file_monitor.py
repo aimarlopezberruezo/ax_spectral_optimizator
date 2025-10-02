@@ -3,10 +3,9 @@ import logging
 from threading import Event
 from watchdog.events import FileSystemEventHandler
 
-logger=logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 class TxtHandler(FileSystemEventHandler):
-
     def __init__(self):
         self.new_txt_event = Event()
         self.latest_txt_path = None
@@ -17,11 +16,7 @@ class TxtHandler(FileSystemEventHandler):
             try:
                 self.latest_txt_path = event.src_path
                 self.new_txt_event.set()
-<<<<<<< HEAD
                 logger.debug(f'Signal aactivated for TXT: {event.src_path}')
-=======
-                print(f'DEBUG: Signal aactivated for TXT: {event.src_path}')
->>>>>>> spectral_matching
             except Exception as e:
                 logger.error(f'Error handling created event in TxtHandler: {e}')
 
@@ -36,14 +31,9 @@ class JSONHandler (FileSystemEventHandler):
             try:
                 self.latest_json_path = event.src_path
                 self.new_json_event.set()
-<<<<<<< HEAD
                 logger.debug(f'Signal activated for JSON: {event.src_path}')
             except Exception as e:
                 logger.error(f'Error handling created event in JSONHandler: {e}')
-=======
-                print(f'DEBUG: Signal activated for JSON: {event.src_path}')
-            except Exception as e:
-                print(f'ERROR: Error handling created event in JSONHandler: {e}')
 
 class SpecHandler (FileSystemEventHandler):
 
@@ -56,7 +46,6 @@ class SpecHandler (FileSystemEventHandler):
             try:
                 self.latest_json_path = event.src_path
                 self.new_json_event.set()
-                print(f'DEBUG: Signal activated for JSON: {event.src_path}')
+                logger.debug(f'Signal activated for JSON: {event.src_path}')
             except Exception as e:
-                print(f'ERROR: Error handling created event in SpecHandler: {e}')
->>>>>>> spectral_matching
+                logger.error(f'Error handling created event in SpecHandler: {e}')

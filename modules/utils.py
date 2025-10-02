@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from matplotlib.dates import DateFormatter
 from config.experiment_settings import *
 from config.path_declarations import *
+import pyvisa
 
 logger=logging.getLogger(__name__)
 
@@ -473,6 +474,7 @@ def create_folders(paths):
         except Exception as e:
             logger.error(f"Error creating folder {path}: {str(e)}")
             raise
+
 def log(config):
     try:
         #Create log directory if it doesn't exist
@@ -525,7 +527,18 @@ def log(config):
         plog_level = plog_levels.get(PIL_LOG_LEVEL.upper(), logging.WARNING)
         logging.getLogger('PIL').setLevel(plog_level)
 
-        return log_level, mat_log_level,plog_level
+        # Configure PyVISA logging
+        pyvisa_logs = {
+            "DEBUG": "DEBUG", 
+            "INFO": "INFO",
+            "WARNING": "WARNING",
+            "ERROR": "ERROR",
+            "CRITICAL": "CRITICAL"
+        }
+        pyvisa_log=pyvisa_logs.get(Pyvisa_LOG_LEVEL.upper(), "WARNING")
+        pyvisa.logger.setLevel(pyvisa_log)
+
+        return log_level, mat_log_level,plog_level,pyvisa_log
     
     except Exception as e:
         logger.critical(f'Critical error while setting up logging: {str(e)}')
@@ -796,104 +809,102 @@ def write_csv(file_path, config, trial, channels, loss, shape):
         writer.writerow(row)
 
 def search_and_load_target_spectra(file_name, json_dir, csv_dir):
-
     json_path = os.path.join(json_dir, f"{file_name}.json")
     csv_path = os.path.join(csv_dir, f"{file_name}.csv")
 
     if os.path.isfile(json_path):
-        print(f"JSON file founded: {json_path}")
+        logger.info(f"JSON file founded: {json_path}")
         return load_target_spectra(json_path)
 
     elif os.path.isfile(csv_path):
-        print(f"CSV file founded: {csv_path}, converting to JSON...")
+        logger.info(f"CSV file founded: {csv_path}, converting to JSON...")
         data = csv_to_json_like_reference(csv_path, json_path)
         return load_target_spectra(json_path)
 
     else:
-        print(f"ERROR: No {file_name} in .json o .csv format")
+        logger.error(f"No {file_name} in .json o .csv format")
         raise FileNotFoundError(f"No {file_name} in json o csv.")
 
 def load_target_spectra (file_path):
-
-    print(f'Starting to load target spectra values from: {file_path}')
+    logger.info(f'Starting to load target spectra values from: {file_path}')
     
     try:
         with open(file_path, "r") as file:
-            print(f'DEBUG: JSON file opened successfully: {file_path}')
+            logger.debug(f'JSON file opened successfully: {file_path}')
             datos = json.load(file)
-            print(f'DEBUG: JSON data loaded: {datos}')
+            logger.debug(f'JSON data loaded: {datos}')
     except FileNotFoundError:
-        print(f"ERROR: File not found: {file_path}")
+        logger.error(f"File not found: {file_path}")
         raise
     except json.JSONDecodeError as e:
-        print(f"ERROR: Error decoding the JSON file {file_path}: {str(e)}")
+        logger.error(f"Error decoding the JSON file {file_path}: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while loading the file {file_path}: {str(e)}")
+        logger.error(f"Unexpected error while loading the file {file_path}: {str(e)}")
         raise
 
     try:
         target_values = {item['wavelengths']: item['value'] for item in datos}
-        print(f'Target values successfully loaded from: {file_path}')
+        logger.info(f'Target values successfully loaded from: {file_path}')
         return target_values
     except KeyError as e:
-        print(f"ERROR: Error: The JSON file is not in the expected format. Missing key: {str(e)}")
+        logger.error(f"Error: The JSON file is not in the expected format. Missing key: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while processing JSON data: {str(e)}")
+        logger.error(f"Unexpected error while processing JSON data: {str(e)}")
         raise
     except KeyError as e:
-        print(f"ERROR: Error: The JSON file is not in the expected format. Missing key: {str(e)}")
+        logger.error(f"Error: The JSON file is not in the expected format. Missing key: {str(e)}")
         raise
     except Exception as e:
-        print(f"Unexpected error while processing JSON data: {str(e)}")
+        logger.error(f"Unexpected error while processing JSON data: {str(e)}")
         raise
     
 def load_event_spectra(file_path):
 
-    print(f'Starting event spectra loading from: {file_path}')
+    logger.info(f'Starting event spectra loading from: {file_path}')
     
     if not os.path.exists(file_path):
-        print(f'ERROR: The file does not exist: {file_path}')
+        logger.error(f'The file does not exist: {file_path}')
         return None
 
     if os.path.getsize(file_path) == 0:
-        print(f'ERROR: The file is empty: {file_path}')
+        logger.error(f'The file is empty: {file_path}')
         return None
 
     attempts = 3
     for attempt in range(attempts):
         try:
             with open(file_path, "r") as file:
-                print(f'DEBUG: JSON file opened successfully (Attempt {attempt+1}/{attempts}): {file_path}')
+                logger.debug(f'JSON file opened successfully (Attempt {attempt+1}/{attempts}): {file_path}')
                 data = json.load(file)                
                 if data:
                     event = {}
                     try:
                         event = {item['wavelengths']: item['value'] for item in data}
-                        print(f'Event spectra successfully loaded from: {file_path}')
+                        logger.info(f'Event spectra successfully loaded from: {file_path}')
                         return event
                     except (KeyError, AttributeError) as e:
-                        print(f"WARNING: Error processing event spectra. Details: {str(e)}")
+                        logger.warning(f"Error processing event spectra. Details: {str(e)}")
                         continue
                     
                 else:
-                    print(f'WARNING: The JSON file is empty or does not contain valid data: {file_path}')
+                    logger.warning(f'The JSON file is empty or does not contain valid data: {file_path}')
                     return None
 
         except json.JSONDecodeError as e:
-            print(f'WARNING: Error decoding JSON (Attempt {attempt+1}/{attempts}): {e}')
+            logger.warning(f'Error decoding JSON (Attempt {attempt+1}/{attempts}): {e}')
             time.sleep(1)
         except Exception as e:
-            print(f'ERROR: Failed to load the file after {attempts} attempts: {file_path}')
+            logger.error(f'Failed to load the file after {attempts} attempts: {file_path}')
             return None
 
-    print(f'ERROR: Failed to load the file after {attempts} attempts: {file_path}')
+    logger.error(f'Failed to load the file after {attempts} attempts: {file_path}')
     return None
 
 def calculate_error_spec(current_values, target_values):
 
-    print('Starting error calculation between spectras...')
+    logger.info('Starting error calculation between spectras...')
 
     try:
         # 1. Normalize target spectrum keys (remove .0 if exists)
@@ -905,10 +916,10 @@ def calculate_error_spec(current_values, target_values):
 
         # 3. Find wavelength intersection
         common_keys = set(target_cleaned.keys()) & set(current_cleaned.keys())
-        print(f'DEBUG: TARGET_KEYS: {target_cleaned.keys()}, CURRENT_KEYS: {current_cleaned.keys()}, COMMON_KEYS: {common_keys}')
+        logger.debug(f'TARGET_KEYS: {target_cleaned.keys()}, CURRENT_KEYS: {current_cleaned.keys()}, COMMON_KEYS: {common_keys}')
         
         if not common_keys:
-            print("ERROR: No common wavelengths found. Check spectral ranges.")
+            logger.error("No common wavelengths found. Check spectral ranges.")
             raise ValueError("No overlapping wavelengths between spectra.")
 
         # 4. Sort numerically and extract values
@@ -921,17 +932,17 @@ def calculate_error_spec(current_values, target_values):
         obj2_norm = (obj2 - np.min(obj2)) / (np.max(obj2) - np.min(obj2) + 1e-10)
         
         loss = np.linalg.norm(obj1_norm - obj2_norm)
-        print(f"Computed loss: {loss} (using {len(common_keys)} common wavelengths)")
+        logger.info(f"Computed loss: {loss} (using {len(common_keys)} common wavelengths)")
 
         return {"Variable_error": (loss, 0.0)}
 
     except Exception as e:
-        print(f'ERROR: Unexpected error while calculating error: {str(e)}')
+        logger.error(f'Unexpected error while calculating error: {str(e)}')
         raise
 
 def process_spectra(datos_espectro):
 
-    print('Processing spectra values...')
+    logger.info('Processing spectra values...')
 
     # Convert dict to list of dicts if needed
     if isinstance(datos_espectro, dict):
@@ -962,7 +973,7 @@ def plot_spectra_files_json(folder_path, objective_json_path=None, save_path=Non
     files = [f for f in os.listdir(folder_path) if f.endswith('.json') and f != os.path.basename(objective_json_path)]
     
     if not files:
-        print(f"No JSON files found in folder: {folder_path}")
+        logger.error(f"No JSON files found in folder: {folder_path}")
         return
     
     # Create a figure for each file
@@ -1001,13 +1012,13 @@ def plot_spectra_files_json(folder_path, objective_json_path=None, save_path=Non
             if save_path:
                 os.makedirs(save_path, exist_ok=True)
                 plt.savefig(os.path.join(save_path, f'{file_name}_plot.png'), dpi=300)
-                print(f'Plot saved to {save_path}/{file_name}_plot.png')
+                logger.info(f'Plot saved to {save_path}/{file_name}_plot.png')
                 plt.close()
             else:
                 plt.show()
             
         except Exception as e:
-            print(f"Error processing file {filename}: {str(e)}")
+            logger.error(f"Error processing file {filename}: {str(e)}")
 
 def load_objective_json_spectrum(json_path):
 
