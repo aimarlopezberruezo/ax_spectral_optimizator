@@ -735,3 +735,237 @@ def write_csv(file_path, config, trial, channels, loss, shape):
         # Write data row
         row = [sample_id, shape] + channel_values + [loss]
         writer.writerow(row)
+
+def search_and_load_target_spectra(file_name, json_dir, csv_dir):
+
+    json_path = os.path.join(json_dir, f"{file_name}.json")
+    csv_path = os.path.join(csv_dir, f"{file_name}.csv")
+
+    if os.path.isfile(json_path):
+        print(f"JSON file founded: {json_path}")
+        return load_target_spectra(json_path)
+
+    elif os.path.isfile(csv_path):
+        print(f"CSV file founded: {csv_path}, converting to JSON...")
+        data = csv_to_json_like_reference(csv_path, json_path)
+        return load_target_spectra(json_path)
+
+    else:
+        print(f"ERROR: No {file_name} in .json o .csv format")
+        raise FileNotFoundError(f"No {file_name} in json o csv.")
+
+def load_target_spectra (file_path):
+
+    print(f'Starting to load target spectra values from: {file_path}')
+    
+    try:
+        with open(file_path, "r") as file:
+            print(f'DEBUG: JSON file opened successfully: {file_path}')
+            datos = json.load(file)
+            print(f'DEBUG: JSON data loaded: {datos}')
+    except FileNotFoundError:
+        print(f"ERROR: File not found: {file_path}")
+        raise
+    except json.JSONDecodeError as e:
+        print(f"ERROR: Error decoding the JSON file {file_path}: {str(e)}")
+        raise
+    except Exception as e:
+        print(f"ERROR: Unexpected error while loading the file {file_path}: {str(e)}")
+        raise
+
+    try:
+        target_values = {item['wavelengths']: item['value'] for item in datos}
+        print(f'Target values successfully loaded from: {file_path}')
+        return target_values
+    except KeyError as e:
+        print(f"ERROR: Error: The JSON file is not in the expected format. Missing key: {str(e)}")
+        raise
+    except Exception as e:
+        print(f"ERROR: Unexpected error while processing JSON data: {str(e)}")
+        raise
+    except KeyError as e:
+        print(f"ERROR: Error: The JSON file is not in the expected format. Missing key: {str(e)}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error while processing JSON data: {str(e)}")
+        raise
+    
+def load_event_spectra(file_path):
+
+    print(f'Starting event spectra loading from: {file_path}')
+    
+    if not os.path.exists(file_path):
+        print(f'ERROR: The file does not exist: {file_path}')
+        return None
+
+    if os.path.getsize(file_path) == 0:
+        print(f'ERROR: The file is empty: {file_path}')
+        return None
+
+    attempts = 3
+    for attempt in range(attempts):
+        try:
+            with open(file_path, "r") as file:
+                print(f'DEBUG: JSON file opened successfully (Attempt {attempt+1}/{attempts}): {file_path}')
+                data = json.load(file)                
+                if data:
+                    event = {}
+                    try:
+                        event = {item['wavelengths']: item['value'] for item in data}
+                        print(f'Event spectra successfully loaded from: {file_path}')
+                        return event
+                    except (KeyError, AttributeError) as e:
+                        print(f"WARNING: Error processing event spectra. Details: {str(e)}")
+                        continue
+                    
+                else:
+                    print(f'WARNING: The JSON file is empty or does not contain valid data: {file_path}')
+                    return None
+
+        except json.JSONDecodeError as e:
+            print(f'WARNING: Error decoding JSON (Attempt {attempt+1}/{attempts}): {e}')
+            time.sleep(1)
+        except Exception as e:
+            print(f'ERROR: Failed to load the file after {attempts} attempts: {file_path}')
+            return None
+
+    print(f'ERROR: Failed to load the file after {attempts} attempts: {file_path}')
+    return None
+
+def calculate_error_spec(current_values, target_values):
+
+    print('Starting error calculation between spectras...')
+
+    try:
+        # 1. Normalize target spectrum keys (remove .0 if exists)
+        target_cleaned = {str(int(float(k))): v for k, v in target_values.items()}
+        
+        # 2. Process current spectrum (process_spectra returns integers)
+        processed_spectra = process_spectra(current_values)
+        current_cleaned = {str(item["wavelengths"]): item["value"] for item in processed_spectra}
+
+        # 3. Find wavelength intersection
+        common_keys = set(target_cleaned.keys()) & set(current_cleaned.keys())
+        print(f'DEBUG: TARGET_KEYS: {target_cleaned.keys()}, CURRENT_KEYS: {current_cleaned.keys()}, COMMON_KEYS: {common_keys}')
+        
+        if not common_keys:
+            print("ERROR: No common wavelengths found. Check spectral ranges.")
+            raise ValueError("No overlapping wavelengths between spectra.")
+
+        # 4. Sort numerically and extract values
+        sorted_keys = sorted(common_keys, key=lambda x: int(x))
+        obj1 = np.array([current_cleaned[k] for k in sorted_keys])
+        obj2 = np.array([target_cleaned[k] for k in sorted_keys])
+
+        # 5. Normalize and calculate error
+        obj1_norm = (obj1 - np.min(obj1)) / (np.max(obj1) - np.min(obj1) + 1e-10)
+        obj2_norm = (obj2 - np.min(obj2)) / (np.max(obj2) - np.min(obj2) + 1e-10)
+        
+        loss = np.linalg.norm(obj1_norm - obj2_norm)
+        print(f"Computed loss: {loss} (using {len(common_keys)} common wavelengths)")
+
+        return {"Variable_error": (loss, 0.0)}
+
+    except Exception as e:
+        print(f'ERROR: Unexpected error while calculating error: {str(e)}')
+        raise
+
+def process_spectra(datos_espectro):
+
+    print('Processing spectra values...')
+
+    # Convert dict to list of dicts if needed
+    if isinstance(datos_espectro, dict):
+        datos_espectro = [{"wavelengths": float(k), "value": v} for k, v in datos_espectro.items()]
+
+    visto = set()
+    espectro_procesado = []
+    
+    for punto in datos_espectro:
+        wavelength_int = int(round(float(punto["wavelengths"])))
+        
+        if wavelength_int not in visto:
+            visto.add(wavelength_int)
+            espectro_procesado.append({
+                "wavelengths": wavelength_int,
+                "value": punto["value"]
+            })
+    return espectro_procesado
+
+def plot_spectra_files_json(folder_path, objective_json_path=None, save_path=None):
+
+    if objective_json_path:
+        objective_wavelengths, objective_values = load_objective_json_spectrum(objective_json_path)
+    else:
+        objective_wavelengths, objective_values = None, None
+        
+    # Get list of files in the folder
+    files = [f for f in os.listdir(folder_path) if f.endswith('.json') and f != os.path.basename(objective_json_path)]
+    
+    if not files:
+        print(f"No JSON files found in folder: {folder_path}")
+        return
+    
+    # Create a figure for each file
+    for filename in files:
+        file_name = os.path.splitext(filename)[0]
+        file_path = os.path.join(folder_path, filename)
+        
+        try:
+            # Read the JSON file
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            
+            # Filter wavelengths above 300
+            filtered_data = [item for item in data if item['wavelengths'] > 300]
+            
+            # Extract wavelengths and values
+            wavelengths = [item['wavelengths'] for item in filtered_data]
+            values = [item['value'] for item in filtered_data]
+
+            values_normalized = normalize(values)
+            
+            # Create the plot
+            plt.figure(figsize=(10, 6))
+            plt.plot(wavelengths, values_normalized, 'b-', linewidth=1, label='Trial Spectrum')
+
+            if objective_wavelengths is not None and objective_values is not None:
+                plt.plot(objective_wavelengths, objective_values, 'g-', linewidth=1.2, label='Objective Spectrum')
+            
+            plt.title(file_name)
+            plt.xlabel('Wavelength (nm)')
+            plt.ylabel('Normalized Intensity')
+            plt.grid(True)
+            plt.legend()
+            
+            # Save the plot
+            if save_path:
+                os.makedirs(save_path, exist_ok=True)
+                plt.savefig(os.path.join(save_path, f'{file_name}_plot.png'), dpi=300)
+                print(f'Plot saved to {save_path}/{file_name}_plot.png')
+                plt.close()
+            else:
+                plt.show()
+            
+        except Exception as e:
+            print(f"Error processing file {filename}: {str(e)}")
+
+def load_objective_json_spectrum(json_path):
+
+    with open(json_path, 'r') as jsonfile:
+        data = json.load(jsonfile)
+    
+    # Filter wavelengths above 300
+    filtered_data = [item for item in data if item['wavelengths'] > 300]
+    
+    wavelengths = [item['wavelengths'] for item in filtered_data]
+    values = [item['value'] for item in filtered_data]
+    
+    # Normalize the values
+    values_normalized = normalize(values)
+    return wavelengths, values_normalized
+
+def normalize(values):
+
+    values_array = np.array(values)
+    return (values_array - np.min(values_array)) / (np.max(values_array) - np.min(values_array))
