@@ -35,3 +35,18 @@ class JSONHandler (FileSystemEventHandler):
                 logger.debug(f'Signal activated for JSON: {event.src_path}')
             except Exception as e:
                 logger.error(f'Error handling created event in JSONHandler: {e}')
+
+class SpecHandler (FileSystemEventHandler):
+
+    def __init__(self):
+        self.new_json_event = Event()
+        self.latest_json_path = None
+    
+    def on_created(self, event):
+        if not event.is_directory and event.src_path.endswith('.json'):
+            try:
+                self.latest_json_path = event.src_path
+                self.new_json_event.set()
+                print(f'DEBUG: Signal activated for JSON: {event.src_path}')
+            except Exception as e:
+                print(f'ERROR: Error handling created event in SpecHandler: {e}')
