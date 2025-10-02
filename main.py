@@ -1,11 +1,36 @@
 #main.py
 import logging
 from config.path_declarations import PROYECT_BASE_PATHS#, FIG_PATH
-from config.experiment_settings import TESTER_EXP, SEED, NUM_TRIALS_SOBOL, tv_name
+from config.experiment_settings import TESTER_EXP, REAL_EXP, SPECTRAL_MATCHING, SEED, NUM_TRIALS_SOBOL, tv_name, target_spec_name
 from modules.utils import create_base_folders
 from experiments.test_experiment import tester
+from experiments.spectral_matching import real_match
 from config.path_declarations import paths
 from modules.utils import parse_error_data, plot_all_targets_errors
+from hardware.G2VPico.G2VPico import G2VPicoController
+import traceback
+import sys
+
+
+
+def _apagar_g2vpico():
+    pico=G2VPicoController()
+    pico.turn_off()
+
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    """Catches any unhandled exception in the program"""
+    # Logs the error
+    tb_formatted="".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print("CRITICAL: Unhandled error", exc_info=(exc_type, exc_value, exc_traceback))
+    traceback.print_exception(exc_type, exc_value, exc_traceback)
+    
+    #Executes emergency sequence
+    _apagar_g2vpico()
+    
+    sys.exit(1)  # Terminates the program with an error code
+
+#Sets up the global handler
+sys.excepthook = global_exception_handler
 
 def main(seed, config, target_val, sobol):
     # Check if the proyect base folders are created
@@ -17,10 +42,17 @@ def main(seed, config, target_val, sobol):
 
     if TESTER_EXP:
         tester(seed, config, target_val, sobol)
+    elif REAL_EXP:
+        if SPECTRAL_MATCHING:
+            real_match(seed, config, target_val, sobol)
+        else:
+            print('There is no such experiment')
 
 if __name__ == '__main__':
     if TESTER_EXP:
         target_files=tv_name
+    elif SPECTRAL_MATCHING:
+        target_files=target_spec_name
     for target_val in target_files:
         for sobol in NUM_TRIALS_SOBOL:
             for seed in SEED:
