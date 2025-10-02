@@ -13,10 +13,11 @@ from matplotlib.dates import DateFormatter
 from config.experiment_settings import *
 from config.path_declarations import *
 
+logger=logging.getLogger(__name__)
 
 def plot_errors_FB(trials, error, sobol_trials, best_parameters, save_path, fecha_utc, num_trials, error_file, is_temp=False, config=None):
 
-    print('Starting the generation of the error plot')
+    logger.info('Starting the generation of the error plot')
 
     try:
         plt.figure(figsize=(12, 6))
@@ -42,14 +43,14 @@ def plot_errors_FB(trials, error, sobol_trials, best_parameters, save_path, fech
         try:
             best_parameters_text = format_dict(best_parameters)
         except Exception as e:
-            print(f"WARNING: Error formatting the dictionaries: {str(e)}")
+            logger.warning(f"Error formatting the dictionaries: {str(e)}")
             best_parameters_text = "Not available"
 
         try:
             best_trial, min_error = find_lowest_error(error_file)
-            print(f'Best trial found: {best_trial} with error: {min_error}')
+            logger.debug(f'Best trial found: {best_trial} with error: {min_error}')
         except Exception as e:
-            print(f"ERROR: Error finding the best trial: {str(e)}")
+            logger.error(f"Error finding the best trial: {str(e)}")
             best_trial = "Not available"
             min_error = "Not available"
 
@@ -76,42 +77,42 @@ def plot_errors_FB(trials, error, sobol_trials, best_parameters, save_path, fech
         try:
             plt.savefig(save_path, dpi=300, bbox_inches='tight')
             plt.savefig(os.path.join(config.FIG_PATH, f'Error_plot_{config.DATA_UTC}.png'), dpi=300, bbox_inches='tight')
-            print(f'Plot saved at: {save_path}')
+            logger.info(f'Plot saved at: {save_path}')
             plt.close()
         except Exception as e:
-            print(f"ERROR: Error saving the plot: {str(e)}")
+            logger.error(f"Error saving the plot: {str(e)}")
             raise
 
-        print('Plot generated successfully')
+        logger.info('Plot generated successfully')
 
     except Exception as e:
-        print(f"ERROR: Error in the function plot_errors_FB: {str(e)}")
+        logger.error(f"Error in the function plot_errors_FB: {str(e)}")
         raise
 
 def format_dict(d):
 
-    print(f'Starting dictionary formatting: {d}')   
+    logger.debug(f'Starting dictionary formatting: {d}')   
     try:
         formatted_text = "\n".join([f"{k}: {v}" for k, v in d.items()])
-        print(f'Dictionary formatted successfully: {formatted_text}')
+        logger.debug(f'Dictionary formatted successfully: {formatted_text}')
         return formatted_text
     except AttributeError as e:
-        print(f"ERROR: Error: The argument is not a dictionary. Details: {str(e)}")
+        logger.error(f"Error: The argument is not a dictionary. Details: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error formatting the dictionary: {str(e)}")
+        logger.error(f"Unexpected error formatting the dictionary: {str(e)}")
         raise
 
 def find_lowest_error(error_file):
     
-    print(f'Starting search for the trial with the lowest error in the file: {error_file}')
+    logger.info(f'Starting search for the trial with the lowest error in the file: {error_file}')
     
     min_error = float('inf')
     min_trial = None
 
     try:
         with open(error_file, 'r', encoding='cp1252') as file:
-            print(f'File opened successfully: {error_file}')
+            logger.debug(f'File opened successfully: {error_file}')
             
             for line in file:
                 if line.startswith("Error of Trial"):
@@ -123,35 +124,35 @@ def find_lowest_error(error_file):
                         if error_value < min_error:
                             min_error = error_value
                             min_trial = trial_number
-                            print(f'New minimum found: Trial {min_trial}, Error {min_error}')
+                            logger.debug(f'New minimum found: Trial {min_trial}, Error {min_error}')
                     except (IndexError, ValueError) as e:
-                        print(f"WARNING: Error processing the line: {line.strip()}. Details: {str(e)}")
+                        logger.warning(f"Error processing the line: {line.strip()}. Details: {str(e)}")
                         continue
 
         if min_trial is None:
-            print("WARNING: No valid trials were found in the file.")
+            logger.warning("No valid trials were found in the file.")
         else:
-            print(f'Trial with the lowest error found: {min_trial}, Error: {min_error}')
+            logger.info(f'Trial with the lowest error found: {min_trial}, Error: {min_error}')
 
         return min_trial, min_error
 
     except FileNotFoundError:
-        print(f"ERROR: File not found: {error_file}")
+        logger.error(f"File not found: {error_file}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error processing the file {error_file}: {str(e)}")
+        logger.error(f"Unexpected error processing the file {error_file}: {str(e)}")
         raise
 
 def find_lowest_loss(loss_file):
 
-    print(f'Starting search for the trial with the lowest loss in the file: {loss_file}')
+    logger.info(f'Starting search for the trial with the lowest loss in the file: {loss_file}')
     
     min_error = float('inf')
     min_trial = None
 
     try:
         with open(loss_file, 'r', encoding='cp1252') as file:
-            print(f'File opened successfully: {loss_file}')
+            logger.debug(f'File opened successfully: {loss_file}')
             
             for line in file:
                 if line.startswith("Loss of Trial"):
@@ -163,120 +164,120 @@ def find_lowest_loss(loss_file):
                         if error_value < min_error:
                             min_error = error_value
                             min_trial = trial_number
-                            print(f'New minimum found: Trial {min_trial}, Error {min_error}')
+                            logger.debug(f'New minimum found: Trial {min_trial}, Error {min_error}')
                     except (IndexError, ValueError) as e:
-                        print(f"WARNING: Error processing the line: {line.strip()}. Details: {str(e)}")
+                        logger.warning(f"Error processing the line: {line.strip()}. Details: {str(e)}")
                         continue
 
         if min_trial is None:
-            print("WARNING: No valid trials were found in the file.")
+            logger.warning("No valid trials were found in the file.")
         else:
-            print(f'Trial with the lowest loss found: {min_trial}, Loss: {min_error}')
+            logger.info(f'Trial with the lowest loss found: {min_trial}, Loss: {min_error}')
 
         return min_trial, min_error
 
     except FileNotFoundError:
-        print(f"ERROR: File not found: {loss_file}")
+        logger.error(f"File not found: {loss_file}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error processing the file {loss_file}: {str(e)}")
+        logger.error(f"Unexpected error processing the file {loss_file}: {str(e)}")
         raise
         
 def load_target_values(file_path):
 
-    print(f'Starting to load target values from: {file_path}')
+    logger.info(f'Starting to load target values from: {file_path}')
     
     try:
         with open(file_path, "r") as file:
-            print(f'JSON file opened successfully: {file_path}')
+            logger.debug(f'JSON file opened successfully: {file_path}')
             datos = json.load(file)
-            print(f'JSON data loaded: {datos}')
+            logger.debug(f'JSON data loaded: {datos}')
     except FileNotFoundError:
-        print(f"ERROR: File not found: {file_path}")
+        logger.error(f"File not found: {file_path}")
         raise
     except json.JSONDecodeError as e:
-        print(f"ERROR: Error decoding the JSON file {file_path}: {str(e)}")
+        logger.error(f"Error decoding the JSON file {file_path}: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while loading the file {file_path}: {str(e)}")
+        logger.error(f"Unexpected error while loading the file {file_path}: {str(e)}")
         raise
 
     try:
         target_values = {f"led {int(item['channel'])}": item['value'] for item in datos}
-        print(f'Target values successfully loaded from: {file_path}')
+        logger.info(f'Target values successfully loaded from: {file_path}')
         return target_values
     except KeyError as e:
-        print(f"ERROR: Error: The JSON file is not in the expected format. Missing key: {str(e)}")
+        logger.error(f"Error: The JSON file is not in the expected format. Missing key: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while processing JSON data: {str(e)}")
+        logger.error(f"Unexpected error while processing JSON data: {str(e)}")
         raise
 
 def save_indi_trials(i, save_path, parameterization, ax_obj):
 
-    print(f'Starting to save trial {i+1} results in: {save_path}')
+    logger.info(f'Starting to save trial {i+1} results in: {save_path}')
     
     try:
         with open(save_path, "w") as file:
-            print(f'File opened successfully for writing: {save_path}')
+            logger.debug(f'File opened successfully for writing: {save_path}')
             file.write(f"Trial {i+1}\n")
             file.write(f"Parameters: {parameterization}\n")
             if MINIMIZE_ERROR:
                 file.write(f"Error: {ax_obj}\n")
-            print(f'Data written successfully to the file: {save_path}')
+            logger.debug(f'Data written successfully to the file: {save_path}')
         
-        print(f'Trial {i+1} results saved successfully in: {save_path}')
+        logger.info(f'Trial {i+1} results saved successfully in: {save_path}')
     except IOError as e:
-        print(f"ERROR: I/O error while saving trial {i+1} in {save_path}: {str(e)}")
+        logger.error(f"I/O error while saving trial {i+1} in {save_path}: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while saving trial {i+1} in {save_path}: {str(e)}")
+        logger.error(f"Unexpected error while saving trial {i+1} in {save_path}: {str(e)}")
         raise
 
 def save_total_trials(i, save_path, parameterization, ax_obj, loss=None):
 
-    print(f'Starting to save trial {i+1} results in: {save_path}')
+    logger.info(f'Starting to save trial {i+1} results in: {save_path}')
     
     try:
         with open(save_path, "a") as file:
-            print(f'File opened successfully for writing (append mode): {save_path}')
+            logger.debug(f'File opened successfully for writing (append mode): {save_path}')
             file.write(f"Trial {i+1}\n")
             file.write(f"Parameters: {parameterization}\n")
             if MINIMIZE_ERROR:
                 file.write(f"Error: {ax_obj}\n")
             elif loss:
                 file.write(f'Loss: {loss}')
-            print(f'Trial {i+1} data written successfully to the file: {save_path}')
+            logger.debug(f'Trial {i+1} data written successfully to the file: {save_path}')
         
-        print(f'Trial {i+1} results saved successfully in: {save_path}')
+        logger.info(f'Trial {i+1} results saved successfully in: {save_path}')
     except IOError as e:
-        print(f"ERROR: I/O error while saving trial {i+1} in {save_path}: {str(e)}")
+        logger.error(f"I/O error while saving trial {i+1} in {save_path}: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while saving trial {i+1} in {save_path}: {str(e)}")
+        logger.error(f"Unexpected error while saving trial {i+1} in {save_path}: {str(e)}")
         raise
 
 def save_error(i, save_path, current_error): 
 
-    print(f'Starting to save trial {i+1} error in: {save_path}')
+    logger.debug(f'Starting to save trial {i+1} error in: {save_path}')
     
     try:
         with open(save_path, "a") as file:
-            print(f'File opened successfully for writing (append mode): {save_path}')
+            logger.debug(f'File opened successfully for writing (append mode): {save_path}')
             file.write(f"Error of Trial {i+1} is Error: {current_error}\n")
-            print(f'Trial {i+1} error written successfully to the file: {save_path}')
+            logger.debug(f'Trial {i+1} error written successfully to the file: {save_path}')
         
-        print(f'Trial {i+1} error saved successfully in: {save_path}')
+        logger.info(f'Trial {i+1} error saved successfully in: {save_path}')
     except IOError as e:
-        print(f"ERROR: I/O error while saving trial {i+1} error in {save_path}: {str(e)}")
+        logger.error(f"I/O error while saving trial {i+1} error in {save_path}: {str(e)}")
         raise
     except Exception as e:
-        print(f"ERROR: Unexpected error while saving trial {i+1} error in {save_path}: {str(e)}")
+        logger.error(f"Unexpected error while saving trial {i+1} error in {save_path}: {str(e)}")
         raise
         
 def txt_to_json(file_path):
 
-    print(f'Starting text file to JSON conversion: {file_path}')
+    logger.info(f'Starting text file to JSON conversion: {file_path}')
     
     MAX_ATTEMPTS = 5
     attempt_count = 0
@@ -285,33 +286,33 @@ def txt_to_json(file_path):
     while attempt_count < MAX_ATTEMPTS:
         try:
             attempt_count +=1
-            print(f'Attempt {attempt_count}/{MAX_ATTEMPTS} to process the file: {file_path}')
+            logger.debug(f'Attempt {attempt_count}/{MAX_ATTEMPTS} to process the file: {file_path}')
             
             #1. File Reading
             try:
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
-                    print(f'File read successfully: {file_path}')
+                    logger.debug(f'File read successfully: {file_path}')
             except FileNotFoundError:
-                print(f'ERROR: Critical: File not found at specified path: {file_path}')
+                logger.error(f'Critical: File not found at specified path: {file_path}')
                 return None, None
             except IOError as e:
-                print(f'WARNING: IOError during file reading (attempt {attempt_count}): {str(e)}')
+                logger.warning(f'IOError during file reading (attempt {attempt_count}): {str(e)}')
                 if attempt_count<MAX_ATTEMPTS:
                     time.sleep(retry_delay)
                     continue
                 else:
-                    print(f'ERRORPermanent IOError after {MAX_ATTEMPTS} attempts')
+                    logger.error(f'Permanent IOError after {MAX_ATTEMPTS} attempts')
                     return None, None
                 
             #2. Empty File Check
             if not lines:
-                print(f'WARNING: The file is empty, retrying... (Attempt {attempt_count + 1}/{MAX_ATTEMPTS})')
+                logger.warning(f'The file is empty, retrying... (Attempt {attempt_count + 1}/{MAX_ATTEMPTS})')
                 if attempt_count<MAX_ATTEMPTS:
                     time.sleep(retry_delay)
                     continue
                 else:
-                    print('ERROR: Failed: File remains empty after retries')
+                    logger.error('Failed: File remains empty after retries')
                     return None, None
                 
             trial_number = None
@@ -327,64 +328,64 @@ def txt_to_json(file_path):
                         match = re.search(r"Trial (\d+)", line, re.IGNORECASE)
                         if match:
                             trial_number = match.group(1)
-                            print(f'Extracted trial number: {trial_number}')
+                            logger.debug(f'Extracted trial number: {trial_number}')
                         else:
-                            print(f'WARNING: Error: Could not extract trial number from line: {line}')
+                            logger.warning(f'Error: Could not extract trial number from line: {line}')
                     except Exception as e:
-                        print(f'ERROR: Error processing trial number: {str(e)}')
+                        logger.error(f'Error processing trial number: {str(e)}')
 
                 #Parameters Extraction
                 if line.lower().startswith("parameters:"):
                     try:
                         param_str = line.split("Parameters:")[1]
                         parameters = eval(param_str)
-                        print(f'Extracted parameters: {parameters}')
+                        logger.debug(f'Extracted parameters: {parameters}')
                     except (IndexError, ValueError, SyntaxError) as e:
-                        print(f'ERROR: Parameter parsing failed: {str(e)}')
+                        logger.error(f'Parameter parsing failed: {str(e)}')
                         parameters= None
                     except Exception as e:
-                        print(f'ERROR: Error evaluating parameters: {str(e)}')
+                        logger.error(f'Error evaluating parameters: {str(e)}')
                         parameters = None
 
             #4. Validation and Conversion
             if not trial_number:
-                print('ERROR: No valid trial number found in file')
+                logger.error('No valid trial number found in file')
                 return None, None
                 
             if not parameters:
-                print('ERROR: No valid parameters found in file')
+                logger.error('No valid parameters found in file')
                 return None, None
             
             try:
                 data = [{"channel": re.search(r'\d+', channel).group(), "value": value} for channel, value in parameters.items()]
                 json_data = json.dumps(data, indent=4)
-                print(f'File successfully converted to JSON: {file_path}')
+                logger.info(f'File successfully converted to JSON: {file_path}')
                 return json_data, trial_number
             except (AttributeError, TypeError) as e:
-                print(f'ERROR: Invalid parameter structure: {str(e)}')
+                logger.error(f'Invalid parameter structure: {str(e)}')
                 return None, None
             except Exception as e:
-                print(f'ERROR: Unexpected error during JSON conversion: {str(e)}')
+                logger.error(f'Unexpected error during JSON conversion: {str(e)}')
                 return None, None
 
         except FileNotFoundError:
-            print(f'ERROR: File not found: {file_path}')
+            logger.error(f'File not found: {file_path}')
             return None, None
         except Exception as e:
-            print(f'CRITICAL: Unexpected error while processing the file {file_path}: {e}')
+            logger.critical(f'Unexpected error while processing the file {file_path}: {e}')
             if attempt_count<MAX_ATTEMPTS:
                 time.sleep(retry_delay)
                 continue
             else:
-                print(f'ERROR: Permanent failure after {MAX_ATTEMPTS} attempts')
+                logger.error(f'Permanent failure after {MAX_ATTEMPTS} attempts')
                 return None, None
             
-    print(f'ERROR: Failed to process the file after {MAX_ATTEMPTS} attempts: {file_path}')
+    logger.error(f'Failed to process the file after {MAX_ATTEMPTS} attempts: {file_path}')
     return None, None
     
 def calculate_error(parameterization, target_values):
 
-    print(f'Starting error calculation between parameterization and target_values')
+    logger.info(f'Starting error calculation between parameterization and target_values')
     
     if isinstance(parameterization, str):
         with open(parameterization, 'r') as f:
@@ -395,28 +396,28 @@ def calculate_error(parameterization, target_values):
     try:
         # Checking key matching
         if set(parameterization.keys()) != set(target_values.keys()):
-            print(f'WARNING: Keys of parameterization and target_values do not match: {parameterization.keys()} vs {target_values.keys()}')
+            logger.warning(f'Keys of parameterization and target_values do not match: {parameterization.keys()} vs {target_values.keys()}')
 
         keys = parameterization.keys()
         obj1 = np.array([parameterization[k] for k in keys])
         obj2 = np.array([target_values[k] for k in keys])
-        print(f'Parameterization values: {obj1}')
-        print(f'Target values: {obj2}')
+        logger.debug(f'Parameterization values: {obj1}')
+        logger.debug(f'Target values: {obj2}')
 
         # Normalizing values
         obj1_norm = (obj1 - np.min(obj1)) / (np.max(obj1) - np.min(obj1))
         obj2_norm = (obj2 - np.min(obj2)) / (np.max(obj2) - np.min(obj2))
-        print(f'Normalized parameterization values: {obj1_norm}')
-        print(f'Normalized target values: {obj2_norm}')
+        logger.debug(f'Normalized parameterization values: {obj1_norm}')
+        logger.debug(f'Normalized target values: {obj2_norm}')
 
         # Calculating error
         norm_error = np.linalg.norm(obj1_norm - obj2_norm)
-        print(f'Calculated error: {norm_error}')
+        logger.info(f'Calculated error: {norm_error}')
 
         return {"Variable_error": (norm_error, 0.0)}
 
     except Exception as e:
-        print(f'ERROR: Unexpected error while calculating error: {str(e)}')
+        logger.error(f'Unexpected error while calculating error: {str(e)}')
         raise
 
 def validate_experiment_limits(real_path, experiment_path):
@@ -431,7 +432,7 @@ def validate_experiment_limits(real_path, experiment_path):
     # Create quick-access dictionary by channel
     real_dict = {entry['channel']: entry['Limit'] for entry in real_limits}
 
-    print("---- LIMIT VALIDATION ----")
+    logger.info("---- LIMIT VALIDATION ----")
     errores = False
 
     for entry in experiment_limits:
@@ -442,24 +443,24 @@ def validate_experiment_limits(real_path, experiment_path):
 
         # Integer type validation
         if not isinstance(lower, int):
-            print(f"WARNING: Channel {ch}: ERROR - Lower-limit = {lower} is not an integer. It must be an integer number.")
+            logger.warning(f"Channel {ch}: ERROR - Lower-limit = {lower} is not an integer. It must be an integer number.")
             errores = True
 
         if not isinstance(upper, int):
-            print(f"WARNING: Channel {ch}: ERROR - Upper-limit = {upper} is not an integer. It must be an integer number.")
+            logger.warning(f"Channel {ch}: ERROR - Upper-limit = {upper} is not an integer. It must be an integer number.")
             errores = True
 
         # Range validation
         if lower < 0:
-            print(f"WARNING: Channel {ch}: ERROR - Lower-limit = {lower} is less than 0. It must be ≥ 0.")
+            logger.warning(f"Channel {ch}: ERROR - Lower-limit = {lower} is less than 0. It must be ≥ 0.")
             errores = True
 
         if upper > real_limit:
-            print(f"WARNING: Channel {ch}: ERROR - Upper-limit = {upper} exceeds the actual limit ({real_limit}). It must be ≤ {real_limit}.")
+            logger.warning(f"Channel {ch}: ERROR - Upper-limit = {upper} exceeds the actual limit ({real_limit}). It must be ≤ {real_limit}.")
             errores = True
 
     if not errores:
-        print("All limits are valid.")
+        logger.info("All limits are valid.")
         return True
     return False
 
@@ -468,10 +469,46 @@ def create_folders(paths):
     for path in paths:
         try:
             os.makedirs(path, exist_ok=True)
-            print(f"Folder created: {path}")
+            logger.info(f"Folder created: {path}")
         except Exception as e:
-            print(f"ERROR: Error creating folder {path}: {str(e)}")
+            logger.error(f"Error creating folder {path}: {str(e)}")
             raise
+def log(config):
+    try:
+        #Create log directory if it doesn't exist
+        os.makedirs(os.path.dirname(config.LOG_FILE), exist_ok=True)
+        
+        #Configure main application logging
+        log_levels = {
+            "DEBUG": logging.DEBUG,
+            "INFO": logging.INFO,
+            "WARNING": logging.WARNING,
+            "ERROR": logging.ERROR,
+            "CRITICAL": logging.CRITICAL
+        }
+        log_level = log_levels.get(EXP_LOG_LEVEL.upper(), logging.WARNING)
+
+        #Clear existing handlers
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+
+        #Set up new handlers (file and console)
+        handlers=[
+            logging.FileHandler(config.LOG_FILE),
+            logging.StreamHandler()
+        ]
+
+        logging.basicConfig(
+            level=log_level,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=handlers
+        )
+
+        return log_level
+    except Exception as e:
+        logger.critical(f'Critical error while setting up logging: {str(e)}')
+        raise
+    
 
 def create_base_folders(paths):
 
@@ -479,11 +516,11 @@ def create_base_folders(paths):
         try:
             os.makedirs(path, exist_ok=True)
         except Exception as e:
-            print(f"ERROR: Error creating folder {path}: {str(e)}")
+            logger.error(f"Error creating folder {path}: {str(e)}")
 
 def load_ax_params(experiment_limits_path):
 
-    print(f"Loading AX parameters from: {experiment_limits_path}")
+    logger.info(f"Loading AX parameters from: {experiment_limits_path}")
     try:
         with open(experiment_limits_path, 'r') as f:
             limits = json.load(f)
@@ -497,10 +534,10 @@ def load_ax_params(experiment_limits_path):
             }
             for item in limits
         ]
-        print(f"AX parameters generated: {parametros_ax[:2]}...")  # Log primeros 2 para ejemplo
+        logger.debug(f"AX parameters generated: {parametros_ax[:2]}...")  # Log primeros 2 para ejemplo
         return parametros_ax
     except Exception as e:
-        print(f"ERROR: Error loading AX parameters: {str(e)}")
+        logger.error(f"Error loading AX parameters: {str(e)}")
         raise
 
 def plot_parameter_comparison(trial_json_dir, target_values, save_path=None):
@@ -545,7 +582,7 @@ def plot_parameter_comparison(trial_json_dir, target_values, save_path=None):
             output_file = os.path.join(save_path, f'compare_{trial_file[:-5]}.png')
             plt.savefig(output_file, dpi=300, bbox_inches='tight')
             plt.close()
-            print(f"Plot saved in {output_file}")
+            logger.info(f"Plot saved in {output_file}")
         else:
             plt.show()
 
@@ -558,7 +595,7 @@ def channel_test_limits(config):
     with open(config.CHANNEL_SIM_LIMITS_FILE, 'w') as f:
         json.dump(canales, f, indent=4)
 
-    print(f"File successfully generated: {config.CHANNEL_SIM_LIMITS_FILE}")
+    logger.info(f"File successfully generated: {config.CHANNEL_SIM_LIMITS_FILE}")
 
 def search_and_load_target_values(file_name, json_dir, csv_dir):
 
@@ -566,16 +603,16 @@ def search_and_load_target_values(file_name, json_dir, csv_dir):
     csv_path = os.path.join(csv_dir, f"{file_name}.csv")
 
     if os.path.isfile(json_path):
-        print(f"JSON file founded: {json_path}")
+        logger.debug(f"JSON file founded: {json_path}")
         return load_target_values(json_path)
 
     elif os.path.isfile(csv_path):
-        print(f"CSV file founded: {csv_path}, converting to JSON...")
+        logger.debug(f"CSV file founded: {csv_path}, converting to JSON...")
         data = csv_to_json_like_reference(csv_path, json_path)
         return load_target_values(json_path)
 
     else:
-        print("ERROR: No target_values in .json o .csv format")
+        logger.error("No target_values in .json o .csv format")
         raise FileNotFoundError("No target_values in json o csv.")
         
 def csv_to_json_like_reference(csv_path, json_output_path):
@@ -616,9 +653,9 @@ def lowest_error_file(lw_error_file, target, seed, error_file):
     else:
         _,min_error=find_lowest_loss(error_file)
     with open(lw_error_file, 'a') as file:
-        print(f'File opened successfully for writing (append mode): {lw_error_file}')
+        logger.debug(f'File opened successfully for writing (append mode): {lw_error_file}')
         file.write(f'Target --> {target}\nSeed --> {seed}\nLowest_error --> {min_error}\n')
-        print(f'Lowest error written successfully to the file: {lw_error_file}, {min_error}')
+        logger.debug(f'Lowest error written successfully to the file: {lw_error_file}, {min_error}')
 
 def parse_error_data(config):
 

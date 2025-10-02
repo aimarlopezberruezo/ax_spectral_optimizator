@@ -1,7 +1,9 @@
 # modules/file_monitor.py
+import logging
 from threading import Event
 from watchdog.events import FileSystemEventHandler
 
+logger=logging.getLogger(__name__)
 
 class TxtHandler(FileSystemEventHandler):
 
@@ -15,9 +17,9 @@ class TxtHandler(FileSystemEventHandler):
             try:
                 self.latest_txt_path = event.src_path
                 self.new_txt_event.set()
-                print(f'Signal aactivated for TXT: {event.src_path}')
+                logger.debug(f'Signal aactivated for TXT: {event.src_path}')
             except Exception as e:
-                print(f'ERROR: Error handling created event in TxtHandler: {e}')
+                logger.error(f'Error handling created event in TxtHandler: {e}')
 
 class JSONHandler (FileSystemEventHandler):
 
@@ -30,6 +32,6 @@ class JSONHandler (FileSystemEventHandler):
             try:
                 self.latest_json_path = event.src_path
                 self.new_json_event.set()
-                print(f'Signal activated for JSON: {event.src_path}')
+                logger.debug(f'Signal activated for JSON: {event.src_path}')
             except Exception as e:
-                print(f'ERROR: Error handling created event in JSONHandler: {e}')
+                logger.error(f'Error handling created event in JSONHandler: {e}')
