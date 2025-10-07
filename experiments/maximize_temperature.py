@@ -1,4 +1,5 @@
 import os
+import logging
 from config.experiment_settings import *
 from modules.utils import *
 from modules.ax_integration import AxIntegration
@@ -21,40 +22,45 @@ def real_temp(seed, config, target_file_name, sobol):
     pico_init=False
 
     try:
-        
+        # Step 0: Configure logging
+        log_level, mat_log_level, pyvisa_log, plog_level= log(config=config)
+        logger = logging.getLogger(__name__)
+        logger.info("----------Step 0: Log configuration----------")
+        logger.info(f'Log levels:\nLOG_LEVEL: {log_level}\nMATPLOTLIB_LOG_LEVEL: {mat_log_level}\nPYVISA_LOG_LEVEL: {pyvisa_log}\nPIL_LOG_LEVEL: {plog_level}')
+
         # Step 1: Load Tester experiment configuration
-        print("----------Step 1: Loading configuration...----------")
-        print(f'REAL_EXP: {REAL_EXP}, MAXIMIZE_TEMP: {MAXIMIZE_TEMP}, MINIMIZE_ERROR: {MINIMIZE_ERROR}')
+        logger.info("----------Step 1: Loading configuration...----------")
+        logger.info(f'REAL_EXP: {REAL_EXP}, MAXIMIZE_TEMP: {MAXIMIZE_TEMP}, MINIMIZE_ERROR: {MINIMIZE_ERROR}')
 
         # Step 2: Load necessary paths
-        print("----------Step 2: Loading necessary paths...----------")
+        logger.info("----------Step 2: Loading necessary paths...----------")
         required_paths = [config.TARGET_SPECTRA_FILE, config.CHANNEL_LIMITS_FILE, config.EXP_LIMITS_PATH]
         required_folders = [config.INDI_RESULTS, config.TRIAL_TXT, config.TRIAL_JSON, config.TRIAL_SPECTRA_JSON, 
                             config.EXP_RESULTS_PATH, config.DATA_EXP, config.LOSS_EXP, config.LOG_PATH, config.TEMP_FILE,
                             config.EXP_PLOT_PATH, config.SPECTRA_PLOTS, config.TEMP_PLOTS, config.FIG_PATH, config.GLOBAL_DATAS]
         if not os.path.exists(config.CHANNEL_LIMITS_FILE):
-            print(f'¡WARNING: {config.CHANNEL_LIMITS_FILE} not found! Creating with write_channel_limits()...')
-            print('Initializing pico to get the limits...')
+            logger.warning(f'¡{config.CHANNEL_LIMITS_FILE} not found! Creating with write_channel_limits()...')
+            logger.info('Initializing pico to get the limits...')
             pico_init=True
             pico=G2VPicoController()
             pico.turn_off()
             pico.clear_channels()
             pico.set_global_intensity(pico.global_intensity)
             pico.write_channel_limits(config.CHANNEL_LIMITS_FILE)
-        print("The folders and paths required for this experiment are as follows:")
-        print(f'Required_paths:\n {required_paths}')
-        print(f'Required_folders:\n {required_folders}')
+        logger.info("The folders and paths required for this experiment are as follows:")
+        logger.info(f'Required_paths:\n {required_paths}')
+        logger.info(f'Required_folders:\n {required_folders}')
 
         # Step 3: Creation of necessary folders
-        print("----------Step 3: Creating necessary folders...----------")
+        logger.info("----------Step 3: Creating necessary folders...----------")
         create_folders(required_folders)
         csv_path=os.path.join(config.GLOBAL_DATAS, 'Experiment_results.csv')
 
         # Step 4: Check channel_limits
-        print("----------Step 4: Checking if the edited limits are valid----------")
+        logger.info("----------Step 4: Checking if the edited limits are valid----------")
         
         if not validate_experiment_limits(config.CHANNEL_LIMITS_FILE, config.EXP_LIMITS_PATH):
-            print("ERROR: Experiment limits are invalid. Check experiment_limits.json")
+            logger.error("Experiment limits are invalid. Check experiment_limits.json")
             wrong_limits=True
             raise ValueError("Invalid experiment limits")
         else:
@@ -62,28 +68,28 @@ def real_temp(seed, config, target_file_name, sobol):
             wrong_limits=False
 
         # Step 5: Initialize G2VPico, MayaPro2000 and TSP01
-        print("----------Step 5: Initializing G2VPico, MayaPro2000 and TSP01----------")
+        logger.info("----------Step 5: Initializing G2VPico, MayaPro2000 and TSP01----------")
         if not pico_init:
             pico=G2VPicoController()
             pico.turn_off()
             pico.clear_channels()
             pico.set_global_intensity(pico.global_intensity)
-            print("G2VPico initializing correctly")
+            logger.info("G2VPico initializing correctly")
         maya=MayaPro2000Controller()
         try:
             maya.set_integration_time()
-            print("MayaPro2000 initializing correctly")
+            logger.info("MayaPro2000 initializing correctly")
         except Exception as e:
-            print(f'ERROR: MayaPro2000 configuration failed: {str(e)}')
+            logger.error(f'MayaPro2000 configuration failed: {str(e)}')
         tsp01=TSP01Controller(config)
         try:
             tsp01.write_header(config.TEMP_FILE_TXT)
-            print(f"TSP01 initializing correcty and header writed in {config.TEMP_FILE_TXT}")
+            logger.info(f"TSP01 initializing correcty and header writed in {config.TEMP_FILE_TXT}")
         except Exception as e:
-            print(f'ERROR: TSP01 configuration failed: {str(e)}')
+            logger.error(f'TSP01 configuration failed: {str(e)}')
 
         # Step 6: Initialize Ax y monitors
-        print("----------Step 6: Initializing Ax and monitors----------")
+        logger.info("----------Step 6: Initializing Ax and monitors----------")
         target_spec=search_and_load_target_spectra(target_file_name, TV_JSONs, TV_CSVs)
         ax = AxIntegration(
             params=params,
@@ -99,7 +105,7 @@ def real_temp(seed, config, target_file_name, sobol):
             recursive=False
         )
         observer_txt.start()
-        print("Observer started (monitoring TxTs folder)")
+        logger.info("Observer started (monitoring TxTs folder)")
 
         # Step up observer for JSONHandler
         json_handler=JSONHandler()
@@ -110,7 +116,7 @@ def real_temp(seed, config, target_file_name, sobol):
             recursive=False
         )
         observer_json.start()
-        print("Observer started (monitoring JSONs folder)")
+        logger.info("Observer started (monitoring JSONs folder)")
 
         # Step up observer for SpecHandler
         spec_handler=SpecHandler()
@@ -121,7 +127,7 @@ def real_temp(seed, config, target_file_name, sobol):
             recursive=False
         )
         observer_spec.start()
-        print("Observer started (monitoring Spectra_JSONs folder)")
+        logger.info("Observer started (monitoring Spectra_JSONs folder)")
 
         # Step up observer for TempHandler
         temp_handler=TempHandler()
@@ -132,22 +138,22 @@ def real_temp(seed, config, target_file_name, sobol):
             recursive=False
         )
         observer_temp.start()
-        print("Observer started (monitoring Stab_temp folder)")
+        logger.info("Observer started (monitoring Stab_temp folder)")
 
         #Main loop
         trials = []
         ax_objs=[]
         losses = []
-        print("Starting experiment cycle...")
-        print("Turning on G2VPico...")
+        logger.info("Starting experiment cycle...")
+        logger.info("Turning on G2VPico...")
         pico.turn_on()
         try:
             for trial in range(sobol + NUM_TRIALS_FB):
-                print(f'--- Trial {trial+1} ---')
+                logger.info(f'--- Trial {trial+1} ---')
 
                 # Step 7: Ax proposes parameters
                 parameters, trial_idx=ax.get_next_trial()
-                print(f'Parameters generated by Ax: {parameters}')
+                logger.info(f'Parameters generated by Ax: {parameters}')
 
                 # Step 8: Save parameters in Txt
                 txt_indi = os.path.join(config.TRIAL_TXT, f'Result_trial_{trial_idx}.txt')
@@ -165,9 +171,9 @@ def real_temp(seed, config, target_file_name, sobol):
                     json_path = os.path.join(config.TRIAL_JSON, f'Result_trial_{trial_idx}.json')
                     with open (json_path, 'w') as f:
                         f.write(json_data)
-                    print(f'JSON generated: {json_path}')
+                    logger.info(f'JSON generated: {json_path}')
                 else:
-                    print("ERROR: Error in TXT to JSON conversion")
+                    logger.error("Error in TXT to JSON conversion")
 
                 # Actively wait for the handler to detect the file
                 json_handler.new_json_event.wait()
@@ -177,9 +183,9 @@ def real_temp(seed, config, target_file_name, sobol):
                 json_pico_data, trial_num = pico.configure_from_txt(txt_handler.latest_txt_path)
                 if json_pico_data:
                     pico.set_spectrum(json_pico_data)
-                    print(f'Spectrum configured in G2VPico ({trial_num})')
+                    logger.info(f'Spectrum configured in G2VPico ({trial_num})')
                 else:
-                    print(f'ERROR: Error in G2VPico configurationo')
+                    logger.error(f'Error in G2VPico configurationo')
                     continue
 
                 # Step 11: Acquire spectrum and save JSON
@@ -189,18 +195,18 @@ def real_temp(seed, config, target_file_name, sobol):
 
                 spectra_path=os.path.join(config.TRIAL_SPECTRA_JSON, f'Spectrum_trial_{trial_idx+1}.json')
                 maya.save_spectrum_to_json(wavelengths, intensities, spectra_path)
-                print(f'Spectrum saved in {spectra_path}')
+                logger.info(f'Spectrum saved in {spectra_path}')
 
                 # Actively wait for the handler to detect the file
                 spec_handler.new_json_event.wait()
                 spec_handler.new_json_event.clear()
 
                 # Step 12: For wait_time seconds, we will be collecting data
-                print(f'Reading temperature during {wait_time}s...')
+                logger.info(f'Reading temperature during {wait_time}s...')
                 stabilized_temp=tsp01.monitor_and_save_stabilized_temp(trial_idx+1)
                 ax_obj=float(stabilized_temp)
                 if stabilized_temp is None:
-                    print('ERROR: Error in temperature monitoring')
+                    logger.error('Error in temperature monitoring')
                 
                 # Actively wait for the handler to detect the file
                 temp_handler.new_txt_event.wait()
@@ -228,22 +234,22 @@ def real_temp(seed, config, target_file_name, sobol):
                 ax.complete_trial({"temperature": (ax_obj, 0.0)})
 
         except Exception as e:
-            print(f'ERROR: Temperature in Trial {trial_idx+1}: {str(e)}')
+            logger.error(f'Temperatura en Trial {trial_idx+1}: {str(e)}')
             pico.turn_off()
     except KeyboardInterrupt:
-        print('WARNING: Stopping the experiment...')
+        logger.warning('Stopping the experiment...')
 
     finally:
         pico.turn_off()
 
-        print("Starting final temperature monitoring")
+        logger.info("Starting final temperature monitoring")
         final_temp = tsp01.monitor_and_save_stabilized_temp (trial_idx+2)
 
         if final_temp is not None:
-            print(f'Final temperature recorded: {final_temp}ºC')
+            logger.info(f'Final temperature recorded: {final_temp}ºC')
         if wrong_limits==False:
             best_parameters, _ = ax.get_best_parameters()
-            print(f'Best founded parameters: {best_parameters}')
+            logger.info(f'Best founded parameters: {best_parameters}')
             lw_error_file=os.path.join(config.GLOBAL_DATAS, f'Lowest_errors.txt')
             lowest_error_file(lw_error_file, target_file_name, seed, loss_file)
             
@@ -262,6 +268,6 @@ def real_temp(seed, config, target_file_name, sobol):
             plot_spectra_files_json(config.TRIAL_SPECTRA_JSON, config.TARGET_JSON_FILE, config.SPECTRA_PLOTS)
             plot_loss_from_txt(loss_file, config.TEMP_PLOTS)
 
-            print("Visualizations successfully generated")
+            logger.info("Visualizations successfully generated")
         else:
-            print("No experiment until limits changed")
+            logger.info("No experiment until limits changed")

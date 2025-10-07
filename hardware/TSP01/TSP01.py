@@ -1,9 +1,11 @@
 #hardware/TSP01/TSP01.py
 import os
+import logging
 from .tsp01_config import tsp01
 from .data_processor import *
 from config.experiment_settings import wait_time
 
+logger= logging.getLogger(__name__)
 
 class TSP01Controller:
     def __init__(self, config):
@@ -17,9 +19,9 @@ class TSP01Controller:
             self.wait_time = wait_time
 
             os.makedirs(self.stab_temp_dir, exist_ok=True)
-            print('TSP01 initialized successfully')
+            logger.info('TSP01 initialized successfully')
         except Exception as e:
-            print('ERROR: Error initializing TSP01: %s', e)
+            logger.error('Error initializing TSP01: %s', e)
             raise
 
 
@@ -35,7 +37,7 @@ class TSP01Controller:
 
     def monitor_and_save_stabilized_temp(self, trial_number):
         try:            
-            print('Monitoring temperature')
+            logger.info('Monitoring temperature')
             stabilized_temp = monitor_temp_for_wait_time(
                 self.tsp01,
                 self.general_file,
@@ -46,11 +48,11 @@ class TSP01Controller:
             if stabilized_temp:
                 save_stabilized_temp_indi(self.stab_temp_dir, trial_number, stabilized_temp)
                 save_stabilized_temp_general(self.general_stab_file, trial_number, stabilized_temp)
-                print(f"Stabilized temperature saved: {stabilized_temp}°C")
+                logger.info(f"Stabilized temperature saved: {stabilized_temp}°C")
             
-            print('Stopped monitoring')
+            logger.info('Stopped monitoring')
             return stabilized_temp
             
         except Exception as e:
-            print(f"ERROR: Error while monitoring and saving temperature: {str(e)}")
+            logger.error(f"Error while monitoring and saving temperature: {str(e)}")
             return None

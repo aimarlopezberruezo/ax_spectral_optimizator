@@ -2,7 +2,9 @@
 import os
 import time
 from datetime import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 
 def write_header(tsp01_device, file_path):
@@ -30,9 +32,9 @@ Time [s]\tDate\tTime\tTemperature[ºC]\tHumidity[%]\tTH1[ºC]\tTH2[ºC]
 """
         with open(file_path, "w") as f:
             f.write(header)
-        print(f'Header written in {file_path}')
+        logger.info(f'Header written in {file_path}')
     except Exception as e:
-        print(f'ERROR: Error writing the header in {file_path}: {e}')
+        logger.error(f'Error writing the header in {file_path}: {e}')
         raise
 
 def datas(temp, hum, th1, th2):
@@ -42,12 +44,12 @@ def datas(temp, hum, th1, th2):
         th1 = float(th1)
         th2 = float(th2)
         if -15 <= temp <= 200 and 0 <= hum <= 100 and -15 <= th1 <= 200 and -15 <= th2 <= 200:
-            print(f'DEBUG: Valid data: Temp={temp}ºC, Hum={hum}, TH1={th1}ºC, TH2={th2}ºC')
+            logger.debug(f'Valid data: Temp={temp}ºC, Hum={hum}, TH1={th1}ºC, TH2={th2}ºC')
             return True
-        print(f'WARNING: Invalid data: Temp={temp}ºC, Hum={hum}, TH1={th1}ºC, TH2={th2}ºC')
+        logger.warning(f'Invalid data: Temp={temp}ºC, Hum={hum}, TH1={th1}ºC, TH2={th2}ºC')
         return False
     except ValueError:
-        print(f'ERROR: Error converting data to float: Temp={temp}, Hum={hum}, TH1={th1}, TH2={th2}')
+        logger.error(f'Error converting data to float: Temp={temp}, Hum={hum}, TH1={th1}, TH2={th2}')
         return False
     
 def save_stabilized_temp_indi(stab_temp_dir, current_trial, temp):
@@ -55,22 +57,22 @@ def save_stabilized_temp_indi(stab_temp_dir, current_trial, temp):
         stab_file = os.path.join(stab_temp_dir, f"Trial_{current_trial}_Stab_Temp.txt")
         with open(stab_file, 'w') as f:
             f.write(f"Trial {current_trial}\nStabilized Temp: {temp}")
-        print(f'Stabilized temperature saved: {stab_file}')
+        logger.info(f'Stabilized temperature saved: {stab_file}')
     except IOError as e:
-        print(f'ERROR: I/O error while saving the stabilized temperature: {e}')
+        logger.error(f'I/O error while saving the stabilized temperature: {e}')
     except Exception as e:
-        print(f'ERROR: Unexpected error while saving the stabilized temperature: {e}')
+        logger.error(f'Unexpected error while saving the stabilized temperature: {e}')
 
 
 def save_stabilized_temp_general(general_stab_file, current_trial, temp):
     try:
         with open(general_stab_file, 'a') as f:
             f.write(f'Stabilized Temperature of Trial {current_trial} is Temp: {temp}\n') 
-        print(f'Stabilized temperature writen in {general_stab_file}')
+        logger.info(f'Stabilized temperature writen in {general_stab_file}')
     except IOError as e:
-        print(f'ERROR: I/O error while saving the stabilized temperature in general file: {e}')
+        logger.error(f'I/O error while saving the stabilized temperature in general file: {e}')
     except Exception as e:
-        print(f'ERROR: Unexpected error while saving the stabilized temperature in general file: {e}')
+        logger.error(f'Unexpected error while saving the stabilized temperature in general file: {e}')
         
 def data_meas(tsp01_device):
     try:
@@ -82,11 +84,11 @@ def data_meas(tsp01_device):
         hum = f"{float(hum_meas):.2f}"
         th1 = f"{float(temp_TH1):.2f}"
         th2 = f"{float(temp_TH2):.2f}"
-        print(f'Data read: Temp={temp}ºC, Hum={hum}%, TH1={th1}ºC, TH2={th2}ºC')
+        logger.info(f'Data read: Temp={temp}ºC, Hum={hum}%, TH1={th1}ºC, TH2={th2}ºC')
         return temp, hum, th1, th2
     except Exception as e:
-        print(f'ERROR: Error reading data: {e}')
-        print('Retrying in 2 seconds...')
+        logger.error(f'Error reading data: {e}')
+        logger.info('Retrying in 2 seconds...')
         time.sleep(2)
         return None, None, None, None
 
@@ -108,7 +110,7 @@ def monitor_temp_for_wait_time(tsp01_device, general_file, wait_time):
                     f.write(f"{time_elapsed}\t{current_time[0]} {current_time[1]}\t{current_time[2]}\t{current_time[3]}\t{temp}\t{hum}\t{th1}\t{th2}\n")
                 
                 last_valid_temp = th1
-                print(f"DEBUG: Data recorded: {time_elapsed}s, Temp={th1}°C")
+                logger.debug(f"Data recorded: {time_elapsed}s, Temp={th1}°C")
             
             sleep_time = 10 - (time.time() - iteration_start)
             if sleep_time > 0:
@@ -117,5 +119,5 @@ def monitor_temp_for_wait_time(tsp01_device, general_file, wait_time):
         return last_valid_temp
         
     except Exception as e:
-        print(f"ERROR: Error in monitor_temp: {str(e)}")
+        logger.error(f"Error in monitor_temp: {str(e)}")
         return None
