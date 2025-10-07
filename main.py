@@ -7,6 +7,8 @@ from experiments.test_experiment import tester
 from experiments.spectral_matching import real_match
 from experiments.maximize_temperature import real_temp
 from hardware.G2VPico.G2VPico import G2VPicoController
+from figs_creator import create_figs
+from mail_sender import *
 from config.path_declarations import paths
 from modules.utils import parse_error_data, plot_all_targets_errors
 import traceback
@@ -17,28 +19,28 @@ def _apagar_g2vpico():
     pico.turn_off()
 
 def global_exception_handler(exc_type, exc_value, exc_traceback):
-    """Captura cualquier excepción no manejada en el programa."""
-    # Registra el error
+    # Logs the error
     tb_formatted="".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    logging.critical("ERROR NO CONTROLADO", exc_info=(exc_type, exc_value, exc_traceback))
+    logging.critical("Unhandled error", exc_info=(exc_type, exc_value, exc_traceback))
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     
-    # Ejecuta secuencia de emergencia
+    # Executes emergency sequence
     _apagar_g2vpico()
     
-    # Envía notificación por correo (opcional)
+    # Sends email notification
     try:
         error_sum =str(exc_value)
         error_det=f'''Critical error in Experiment:
         Error Summary: {error_sum}
 
         Error Details: {tb_formatted}'''
+        send_error_notification(error_det)
     except Exception as mail_error:
         logging.error(f"Fallo al enviar correo: {str(mail_error)}")
     
-    sys.exit(1)  # Termina el programa con código de error
+    sys.exit(1)  # Termitates the program with an error code
 
-# Configura el manejador global
+# Sets up the global handler
 sys.excepthook = global_exception_handler
 
 def main(seed, config, target_val, sobol):
@@ -71,6 +73,11 @@ if __name__ == '__main__':
             for seed in SEED:
                 for _ in range(1):
                     config=paths(target_val)
-                    main(seed, config, target_val, sobol)
+                    try:
+                        main(seed, config, target_val, sobol)
+                        create_figs(config)
+                    finally:
+                        enviar_archivos_por_gmail(seed, config, target_val, sobol)
     data=parse_error_data(config)
     plot_all_targets_errors(data, config)
+    send_experiment_completion_notification(config,sobol)
