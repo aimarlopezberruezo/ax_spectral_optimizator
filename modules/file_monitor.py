@@ -48,8 +48,19 @@ class SpecHandler (FileSystemEventHandler):
                 self.new_json_event.set()
                 logger.debug(f'Signal activated for JSON: {event.src_path}')
             except Exception as e:
-<<<<<<< HEAD
-                print(f'ERROR: Error handling created event in SpecHandler: {e}')
-=======
                 logger.error(f'Error handling created event in SpecHandler: {e}')
->>>>>>> log
+
+class TempHandler(FileSystemEventHandler):
+
+    def __init__(self):
+        self.new_txt_event = Event()
+        self.latest_txt_path = None
+
+    def on_created(self, event):
+        if not event.is_directory and event.src_path.endswith('.txt'):
+            try:
+                self.latest_txt_path = event.src_path
+                self.new_txt_event.set()
+                logger.debug(f'Signal activated for TXT: {event.src_path}')
+            except Exception as e:
+                logger.error(f'Error handling created event in TxtHandler: {e}')

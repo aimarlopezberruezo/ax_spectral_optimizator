@@ -2,7 +2,8 @@
 import os
 from datetime import datetime
 
-BASE_DIR_PATH=os.path.abspath(os.path.join(os.getcwd(), '..'))
+# Project base directory
+BASE_DIR_PATH = os.path.abspath(os.path.join(os.getcwd()))
 #print(BASE_DIR_PATH)
 SRC_DIR_PATH = os.path.join(BASE_DIR_PATH, 'src')
 DOC_DIR_PATH = os.path.join(BASE_DIR_PATH, 'doc')
@@ -73,4 +74,3 @@ class paths:
         self.LOG_FILE = os.path.join(self.LOG_PATH, f'Experiment_{self.DATA_UTC}.log')
 
         self.FIG_PATH = os.path.join(RESULTS_FIGS_PATH, f'EXP_{self.DATA_UTC}')
-

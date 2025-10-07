@@ -1,9 +1,11 @@
 #config/experiment_settings.py
 tv_name=[]
 target_spec_name=[]
+sol_spec_name=[]
 PARAM_MATCHING=False
 SPECTRAL_MATCHING=False
 MINIMIZE_ERROR=False
+MAXIMIZE_TEMP=False
 
 '''  
 Select whether you want it to be a real experiment or a test one (Right now, it can only be a real experiment.)
@@ -33,7 +35,11 @@ if TESTER_EXP:
 If it's a real experiment, what do you want to do during the experiment?
 '''
 if REAL_EXP:
-    SPECTRAL_MATCHING = True #Only option for the moment
+    SPECTRAL_MATCHING = True
+    # TRUE: Experiment where Ax tries to minimize the error between the target and the current trial
+    # FALSE: Experiment where Ax tries to maximize the temperature of the TSP01
+    MAXIMIZE_TEMP = not SPECTRAL_MATCHING    
+    
 
 #------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------- SPECTRAL_MATCHING CONFIGURATION--------------------------------------------
@@ -42,6 +48,23 @@ if SPECTRAL_MATCHING:
     MINIMIZE_ERROR=True
     #target_spec_name=['cubes', 'decahedra', 'rods', 'spheres']
     target_spec_name=['210525a-uv-vis']
+
+#------------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------MAXIMIZE_TEMPERATURE CONFIGURATION-------------------------------------------
+#------------------------------------------------------------------------------------------------------------------------
+
+if MAXIMIZE_TEMP:
+    SOLUTION = False
+    # TRUE: During the experiment, there will be solution in the cuvette.
+    # FALSE: There will be no solution in the cuvette
+    NO_SOLUTION = not SOLUTION
+    if SOLUTION:
+        wait_time = 400 # Waiting time for temperature stabilization
+    elif NO_SOLUTION:
+        wait_time = 20
+
+    #sol_spec_name=['Export Data MG_20250410_AuNRs231120A2']
+    sol_spec_name=['210525a-uv-vis']
     
 #------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------AX CONFIGURATION----------------------------------------------------

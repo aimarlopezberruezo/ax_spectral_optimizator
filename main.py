@@ -1,35 +1,44 @@
 #main.py
 import logging
 from config.path_declarations import PROYECT_BASE_PATHS#, FIG_PATH
-from config.experiment_settings import TESTER_EXP, REAL_EXP, SPECTRAL_MATCHING, SEED, NUM_TRIALS_SOBOL, tv_name, target_spec_name
+from config.experiment_settings import TESTER_EXP, REAL_EXP, SPECTRAL_MATCHING, MAXIMIZE_TEMP, SEED, NUM_TRIALS_SOBOL, target_spec_name, tv_name, sol_spec_name
 from modules.utils import create_base_folders
 from experiments.test_experiment import tester
 from experiments.spectral_matching import real_match
+from experiments.maximize_temperature import real_temp
+from hardware.G2VPico.G2VPico import G2VPicoController
 from config.path_declarations import paths
 from modules.utils import parse_error_data, plot_all_targets_errors
-from hardware.G2VPico.G2VPico import G2VPicoController
 import traceback
 import sys
-
-
 
 def _apagar_g2vpico():
     pico=G2VPicoController()
     pico.turn_off()
 
 def global_exception_handler(exc_type, exc_value, exc_traceback):
-    """Catches any unhandled exception in the program"""
-    # Logs the error
+    """Captura cualquier excepción no manejada en el programa."""
+    # Registra el error
     tb_formatted="".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
-    print("CRITICAL: Unhandled error", exc_info=(exc_type, exc_value, exc_traceback))
+    logging.critical("ERROR NO CONTROLADO", exc_info=(exc_type, exc_value, exc_traceback))
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     
-    #Executes emergency sequence
+    # Ejecuta secuencia de emergencia
     _apagar_g2vpico()
     
-    sys.exit(1)  # Terminates the program with an error code
+    # Envía notificación por correo (opcional)
+    try:
+        error_sum =str(exc_value)
+        error_det=f'''Critical error in Experiment:
+        Error Summary: {error_sum}
 
-#Sets up the global handler
+        Error Details: {tb_formatted}'''
+    except Exception as mail_error:
+        logging.error(f"Fallo al enviar correo: {str(mail_error)}")
+    
+    sys.exit(1)  # Termina el programa con código de error
+
+# Configura el manejador global
 sys.excepthook = global_exception_handler
 
 def main(seed, config, target_val, sobol):
@@ -45,6 +54,8 @@ def main(seed, config, target_val, sobol):
     elif REAL_EXP:
         if SPECTRAL_MATCHING:
             real_match(seed, config, target_val, sobol)
+        elif MAXIMIZE_TEMP:
+            real_temp(seed, config, target_val, sobol)
         else:
             print('There is no such experiment')
 
@@ -53,6 +64,8 @@ if __name__ == '__main__':
         target_files=tv_name
     elif SPECTRAL_MATCHING:
         target_files=target_spec_name
+    elif MAXIMIZE_TEMP:
+        target_files=sol_spec_name
     for target_val in target_files:
         for sobol in NUM_TRIALS_SOBOL:
             for seed in SEED:
