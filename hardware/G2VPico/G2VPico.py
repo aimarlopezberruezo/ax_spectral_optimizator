@@ -8,9 +8,47 @@ import json
 logger = logging.getLogger(__name__)
 
 class G2VPicoController:
+    """
+    Controller class for managing G2VPico spectrometer device operations.
 
+    This class provides a high-level interface to configure and control a G2VPico spectrometer,
+    handling device communication, channel management, intensity control, and spectrum configuration.
+    It includes automatic error logging and recovery mechanisms for robust operation.
+
+    Key Functionalities:
+    - Device initialization and connection management
+    - Global intensity control (0-100% range)
+    - Spectrum configuration from data or text files
+    - Channel limit management with JSON persistence
+    - Safety checks and validation for all operations
+
+    Typical Usage:
+        >>> controller = G2VPicoController()  # Auto-connects to device
+        >>> controller.set_global_intensity(75)
+        >>> controller.set_spectrum(spectrum_data)
+        >>> limits = controller.write_channel_limits("limits.json")
+
+    Attributes:
+        pico (G2VPico): Underlying device communication instance.
+        global_intensity (float): Current global intensity setting (0-100%).
+
+    Raises:
+        ConnectionError: If initial device connection fails.
+        ValueError: For invalid intensity values or configuration data.
+        RuntimeError: For device communication failures during operations.
+
+    Note:
+        All methods raise exceptions on critical failures and log detailed error messages
+        via the module's logger. JSON file operations are not thread-safe.
+    """
     def __init__(self):
-
+        """
+        Initialize the controller and establish device connection.
+        
+        Raises:
+            ConnectionError: If connection to G2VPico device fails.
+            RuntimeError: For unexpected initialization errors.
+        """
         logger.info('Initializing G2VPico controller...')
         try:
             self.pico = G2VPico(PICO_IP_ADDRESS, PICO_ID)
@@ -24,7 +62,12 @@ class G2VPicoController:
         self.global_intensity = global_intensity
 
     def clear_channels(self):
-
+        """
+        Reset all channel configurations to default state.
+        
+        Raises:
+            RuntimeError: If channel clearance operation fails.
+        """
         logger.debug('Initiating channel clearance...')
         try:
             self.pico.clear_channels()
@@ -34,7 +77,12 @@ class G2VPicoController:
             raise
 
     def turn_off(self):
-
+        """
+        Power off the G2VPico device.
+        
+        Raises:
+            RuntimeError: If shutdown command fails.
+        """
         logger.debug('Turning off ...')
         try:
             self.pico.turn_off()
@@ -44,7 +92,12 @@ class G2VPicoController:
             raise
 
     def turn_on(self):
-
+        """
+        Power on the G2VPico device.
+        
+        Raises:
+            RuntimeError: If startup command fails.
+        """
         logger.info('Turning on G2VPico...')
         try:
             self.pico.turn_on()
@@ -54,7 +107,16 @@ class G2VPicoController:
             raise
 
     def set_global_intensity(self, intensity):
-
+        """
+        Set global light intensity output.
+        
+        Args:
+            intensity (float): Target intensity (0-100%).
+            
+        Raises:
+            ValueError: If intensity is outside valid range.
+            RuntimeError: If device rejects the value.
+        """
         logger.debug(f'Requested intensity change: {intensity}%')
         
         if not 0 <= intensity <= 100:
@@ -68,7 +130,16 @@ class G2VPicoController:
             raise
 
     def set_spectrum(self, spectrum_data):
-
+        """
+        Configure the spectrometer with custom channel settings.
+        
+        Args:
+            spectrum_data (dict/list): Spectrum configuration data.
+            
+        Raises:
+            ValueError: For invalid spectrum data format.
+            RuntimeError: If configuration fails.
+        """
         logger.info('Spectrum configuration requested')
         
         try:
@@ -79,7 +150,18 @@ class G2VPicoController:
             raise
 
     def configure_from_txt(self, file_path):
-
+        """
+        Load and apply configuration from a text file.
+        
+        Args:
+            file_path (str): Path to configuration text file.
+            
+        Returns:
+            tuple: (json_data, trial_number) if successful, (None, None) otherwise.
+            
+        Raises:
+            RuntimeError: For file processing or configuration errors.
+        """
         logger.info(f'Loading configuration from: {file_path}')
 
         try:
@@ -95,12 +177,28 @@ class G2VPicoController:
             raise
     
     def channel_list(self):
-
+        """
+        Retrieve list of available channels.
+        
+        Returns:
+            list: Active channel identifiers.
+        """
         logger.info('Getting channel list...')
         return self.pico.channel_list
     
     def set_channel_limit(self, channel):
-
+        """
+        Get the current limit setting for a specific channel.
+        
+        Args:
+            channel (str/int): Target channel identifier.
+            
+        Returns:
+            float: Current limit value.
+            
+        Raises:
+            RuntimeError: If limit retrieval fails.
+        """
         logger.info('Getting each channel limits...')
         try:
             lim=self.pico.get_channel_limit(channel)
@@ -110,7 +208,15 @@ class G2VPicoController:
             logger.error(f'Error getting the limits: {str(e)}')
 
     def write_channel_limits(self, file_path):
-
+        """
+        Save all channel limits to a JSON file.
+        
+        Args:
+            file_path (str): Destination JSON file path.
+            
+        Note:
+            Creates new file or updates existing one. Logs errors per-channel.
+        """
         try:
             channel_list=self.channel_list()
             logger.info(f"Retrieved channel list: {channel_list}")

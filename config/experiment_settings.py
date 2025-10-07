@@ -8,9 +8,9 @@ MINIMIZE_ERROR=False
 MAXIMIZE_TEMP=False
 
 '''  
-Select whether you want it to be a real experiment or a test one (Right now, it can only be a real experiment.)
+Select whether you want it to be a real experiment or a test one  
 '''
-REAL_EXP=False
+REAL_EXP = False
 # TRUE: You want to do a real experiment using hardwares
 # FALSE: You can't use any hardware but you want to do some experiments as test.
 TESTER_EXP = not REAL_EXP
@@ -26,7 +26,7 @@ The only available testing experiment is to make the Ax parameters match some ta
 if TESTER_EXP:
     PARAM_MATCHING = True
     MINIMIZE_ERROR = True
-    tv_name=['target_values'] #Choose the name of the target_file
+    tv_name=['target_values', 'target_values2'] #Choose the name of the target_file
 
 #------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------------REAL EXP CONFIGURATION-------------------------------------------------
@@ -35,11 +35,11 @@ if TESTER_EXP:
 If it's a real experiment, what do you want to do during the experiment?
 '''
 if REAL_EXP:
-    SPECTRAL_MATCHING = True
+    SPECTRAL_MATCHING = False 
     # TRUE: Experiment where Ax tries to minimize the error between the target and the current trial
     # FALSE: Experiment where Ax tries to maximize the temperature of the TSP01
-    MAXIMIZE_TEMP = not SPECTRAL_MATCHING    
-    
+    MAXIMIZE_TEMP = not SPECTRAL_MATCHING
+
 
 #------------------------------------------------------------------------------------------------------------------------
 #-------------------------------------------- SPECTRAL_MATCHING CONFIGURATION--------------------------------------------
@@ -65,7 +65,7 @@ if MAXIMIZE_TEMP:
 
     #sol_spec_name=['Export Data MG_20250410_AuNRs231120A2']
     sol_spec_name=['210525a-uv-vis']
-    
+
 #------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------------AX CONFIGURATION----------------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ How many trials do you want the experiment to have?
 '''
 # Experiment Duration and Ax information
 NUM_TRIALS_SOBOL = [20,15,10,5]
-NUM_TRIALS_FB = 4
+NUM_TRIALS_FB = 30
 #SEED = [123, 456, 7890, 349]
 SEED = [123, 456]
 
@@ -86,17 +86,17 @@ SEED = [123, 456]
 '''
 What level of logs do you want to store?
 '''
-# Write in uppercase the desired log level, choose from:    
+# Write in uppercase (Matplotlib_LOG_LEVEL in lowercase) the desired log level, choose from:    
     # DEBUG: Technical details (e.g., "Value of X=5", "Iteration 3/10"). Useful only for developers.
     # INFO: Normal events (e.g., "Loading file X", "Process Y completed").
     # WARNING: Unusual but manageable situations (e.g., "File does not exist, a new one will be created").
     # ERROR: Issues that affect operation but do not crash the system (e.g., "Could not read X, using default value").
     # CRITICAL: Severe errors that halt execution (e.g., "Out of memory", "API key not configured").
-
+    
 EXP_LOG_LEVEL = "DEBUG"
 Matplotlib_LOG_LEVEL = "WARNING"
-PIL_LOG_LEVEL = "WARNING"
 Pyvisa_LOG_LEVEL = "WARNING"
+PIL_LOG_LEVEL = "WARNING"
 
 #------------------------------------------------------------------------------------------------------------------------
 #----------------------------------------------- MAIL-SENDER CONFIGURATION-----------------------------------------------

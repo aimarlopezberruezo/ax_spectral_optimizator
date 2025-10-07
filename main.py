@@ -19,6 +19,7 @@ def _apagar_g2vpico():
     pico.turn_off()
 
 def global_exception_handler(exc_type, exc_value, exc_traceback):
+    """Catches any unhandled exception in the program."""
     # Logs the error
     tb_formatted="".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
     logging.critical("Unhandled error", exc_info=(exc_type, exc_value, exc_traceback))
@@ -60,7 +61,7 @@ def main(seed, config, target_val, sobol):
             real_temp(seed, config, target_val, sobol)
         else:
             print('There is no such experiment')
-
+            
 if __name__ == '__main__':
     if TESTER_EXP:
         target_files=tv_name

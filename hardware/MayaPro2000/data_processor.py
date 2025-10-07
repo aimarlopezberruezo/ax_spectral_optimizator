@@ -6,7 +6,32 @@ logger = logging.getLogger(__name__)
 
 
 def acquire_spectrum(spec):
+    """
+    Acquires spectral data (wavelengths and intensities) from a spectrometer device.
 
+    Retrieves synchronized wavelength-intensity pairs from the connected spectrometer.
+    Handles common device communication errors and logs detailed failure reasons.
+
+    Args:
+        spec: Spectrometer device object with required methods:
+            - wavelengths(): Returns array of wavelength values (nm)
+            - intensities(): Returns array of corresponding intensity values
+
+    Returns:
+        tuple: 
+            - wavelengths (array): Array of wavelength values in nanometers.
+            - intensities (array): Array of corresponding intensity measurements.
+        Returns (None, None) on failure.
+
+    Raises:
+        AttributeError: If spectrometer lacks required methods (logged as error).
+        RuntimeError: For device communication failures (logged as error).
+
+    Example:
+        >>> wavelengths, intensities = acquire_spectrum(spectrometer)
+        >>> print(wavelengths[:5])
+        [400.0, 400.5, 401.0, 401.5, 402.0]
+    """
     try:
         wavelengths = spec.wavelengths()
         intensities = spec.intensities()
@@ -20,7 +45,32 @@ def acquire_spectrum(spec):
         return None, None
 
 def save_spectrum_to_json(wavelengths, intensities, filepath):
+    """
+    Saves spectral data to a JSON file in standardized format.
 
+    Converts wavelength-intensity pairs to JSON-compatible format and writes to disk.
+    Performs data validation and handles filesystem errors gracefully.
+
+    Args:
+        wavelengths (array-like): Sequence of wavelength values (nm).
+        intensities (array-like): Sequence of corresponding intensity values.
+        filepath (str): Destination path for JSON file (.json extension recommended).
+
+    Raises:
+        TypeError: If input data cannot be converted to float (logged as error).
+        IOError: For filesystem access problems (logged as error).
+        ValueError: If wavelength/intensity arrays have mismatched lengths.
+
+    Notes:
+        - Output JSON structure:
+            [{"wavelengths": 400.0, "value": 1500.2}, ...]
+        - Overwrites existing files without warning.
+        - Uses 4-space JSON indentation for human readability.
+
+    Example:
+        >>> save_spectrum_to_json(wl_array, int_array, "spectrum.json")
+        Spectrum saved at spectrum.json
+    """
     try:
         # Transforming the spectrum into JSON
         spec_json = [

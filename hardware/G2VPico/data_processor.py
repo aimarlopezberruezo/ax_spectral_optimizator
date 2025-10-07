@@ -8,6 +8,36 @@ import os
 logger = logging.getLogger(__name__)
 
 def txt_to_json(file_path):
+    """
+    Converts a structured text file into JSON format with automatic error recovery.
+
+    Processes a text file containing trial data and parameters, extracts relevant information
+    (trial number and parameters), and converts it into a JSON-formatted string. Implements
+    retry logic for file operations and data parsing.
+
+    Args:
+        file_path (str): Path to the input text file. Expected format:
+                        - Lines starting with "Trial [number]"
+                        - Lines starting with "Parameters: {dictionary}"
+
+    Returns:
+        tuple: 
+            - json_data (str|None): JSON string representing the parameters data, formatted as:
+                [{"channel": "X", "value": Y}, ...]. Returns None if conversion fails.
+            - trial_number (str|None): Extracted trial number (e.g., "123"). Returns None if not found.
+
+    Raises:
+        FileNotFoundError: If the file does not exist (logged as critical).
+        IOError: If persistent file access issues occur after retries (logged).
+        ValueError/SyntaxError: If parameter parsing fails (logged).
+
+    Notes:
+        - Retry Mechanism: Attempts up to 5 times with 1-second delays for transient errors.
+        - Expected File Structure Example:
+            Trial 42
+            Parameters: {"ch1": 100, "ch2": 200}
+        - Security: Uses `eval()` for parameter parsing (ensure trusted file sources).
+    """
 
     logger.info(f'Starting text file to JSON conversion: {file_path}')
     
@@ -110,7 +140,31 @@ def txt_to_json(file_path):
     return None, None
 
 def limit_json (channel, limit, file_name):
+    """Appends or updates channel limit values in a JSON configuration file.
 
+    Manages a JSON file containing channel limits, with capabilities to:
+    - Create new entries for non-existent channels
+    - Update limits for existing channels
+    - Handle file corruption/creation automatically
+
+    Args:
+        channel (str or int): Channel identifier (e.g., "CH1" or 42).
+        limit (float): Threshold value to set for the specified channel.
+        file_name (str): Path to the JSON file. Created if nonexistent.
+
+    Returns:
+        bool: 
+            - True: Operation completed successfully
+            - False: Failed due to I/O errors or critical exceptions
+
+    Raises:
+        IOError: On persistent file access failures (logged as error).
+        JSONDecodeError: If existing file contains invalid JSON (handled automatically).
+
+    Notes:
+        - File Structure: Maintains a list of dictionaries with format:
+            [{"channel": id, "Limit": value}, ...]
+    """
     logger.info(f"Updating channel limits in {file_name} - Channel: {channel}, Limit: {limit}")
     data=[]
 

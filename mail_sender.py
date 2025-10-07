@@ -13,6 +13,41 @@ from config.experiment_settings import *
 logger = logging.getLogger(__name__)
 
 def enviar_archivos_por_gmail(seed, config, target_file_name, sobol):
+    """Sends experimental data and results via email as a zip attachment.
+
+    Compiles experiment results, configuration details, and log files into a zip archive
+    and sends them to specified recipients via Gmail. Handles all aspects of email creation
+    including authentication, message formatting, file attachment, and error handling.
+
+    Args:
+        seed (int): The random seed used for the experiment
+        config (object): Configuration object containing:
+            - DATA_UTC: Timestamp for experiment identification
+            - FIG_PATH: Directory containing result files to send
+            - LOG_FILE: Path to the experiment log file
+        target_file_name (str): Name of the target file used in the experiment
+        sobol (int): Number of Sobol trials performed
+
+    Returns:
+        None: Sends email but doesn't return a value
+
+    Raises:
+        FileNotFoundError: If specified directories/files don't exist
+        smtplib.SMTPException: For email sending failures
+        RuntimeError: For zip file creation problems
+
+    Examples:
+        >>> send_experiment_data_via_gmail(42, config, "target1", 100)
+        # Sends email with experiment data attached
+
+    Note:
+        - Uses Gmail SMTP server on port 587 with TLS
+        - Requires app-specific password for authentication
+        - Creates temporary zip file that's automatically deleted
+        - Includes comprehensive error logging
+        - Supports multiple recipients
+        - Email contains full experiment configuration details
+    """
     # Email configuration
     remitente = "utike112@gmail.com"
     password = "wzyu zqie oifa kajl"  # Application password
@@ -99,6 +134,37 @@ def enviar_archivos_por_gmail(seed, config, target_file_name, sobol):
         logger.error(f"Error sending the email: {str(e)}")
 
 def send_experiment_completion_notification(config):
+    """Sends an email notification with attached results when all experiments complete.
+
+    Compiles all experimental data files into a zip archive and sends them via email
+    to notify recipients that the experiment batch has finished. Includes clear next steps
+    in the message body and handles all email creation, authentication, and file attachment.
+
+    Args:
+        config (object): Configuration object containing:
+            - GLOBAL_DATAS: Directory containing result files to send
+            - DATA_UTC: Timestamp for experiment identification
+
+    Returns:
+        None: Sends email but doesn't return a value
+
+    Raises:
+        FileNotFoundError: If specified directory doesn't exist
+        smtplib.SMTPException: For email sending failures
+        RuntimeError: For zip file creation problems
+
+    Examples:
+        >>> send_experiment_completion_notification(config)
+        # Sends completion email with data attachments
+
+    Note:
+        - Uses Gmail SMTP with TLS encryption
+        - Requires app-specific password for authentication
+        - Creates temporary zip file that's automatically deleted
+        - Includes comprehensive error logging
+        - Supports multiple recipients
+        - Provides clear next steps in message body
+    """
     # Email configuration
     sender = "utike112@gmail.com"
     password = "wzyu zqie oifa kajl"
@@ -171,6 +237,38 @@ I'll be waiting in the lab!"""
         logger.error(f"Error sending the email: {str(e)}")
 
 def send_error_notification(error_message=None):
+    """Sends an email notification when an experiment encounters an error.
+
+    Constructs and sends an error notification email to specified recipients when
+    an experiment fails. Includes detailed error information if provided, and
+    handles all aspects of email creation and transmission.
+
+    Args:
+        error_message (str, optional): Detailed error message to include in notification.
+            If None, a generic error message will be sent. Defaults to None.
+
+    Returns:
+        None: The function sends an email but does not return any value.
+
+    Raises:
+        smtplib.SMTPException: If there is an error during email transmission.
+        RuntimeError: If the email cannot be constructed or sent.
+
+    Examples:
+        >>> send_error_notification("Temperature exceeded safe limits")
+        # Sends error email with the specified message
+
+        >>> send_error_notification()
+        # Sends generic error notification
+
+    Note:
+        - Uses Gmail's SMTP server with TLS encryption
+        - Requires application-specific password for authentication
+        - Sends to predefined recipient list
+        - Includes timestamp in the email subject
+        - Logs both successful and failed attempts
+        - Re-raises exceptions after logging them
+    """
     try:
         # Email configuration
         sender = "utike112@gmail.com"

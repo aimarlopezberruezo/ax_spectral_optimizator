@@ -11,6 +11,37 @@ from config.experiment_settings import *
 logger = logging.getLogger(__name__)
 
 def create_multiple_plots_pdf(config):
+    """Generates a PDF document containing multiple plot images arranged in a grid layout.
+
+    Creates a multi-page PDF with plots arranged in a 3x7 grid (21 plots per page) from PNG
+    files in a specified directory. Maintains proper aspect ratio and includes automatic
+    pagination and consistent margins.
+
+    Args:
+        config (object): Configuration object containing:
+            - FIG_PATH: Output path for PDF file
+            - SPECTRA_PLOTS: Directory containing PNG plot files
+
+    Returns:
+        None: Creates a PDF file at the specified location
+
+    Raises:
+        FileNotFoundError: If SPECTRA_PLOTS directory doesn't exist
+        ValueError: If no PNG files found in directory
+        PermissionError: If unable to write to output PDF
+
+    Examples:
+        >>> create_multiple_plots_pdf(config)
+        # Generates 'compare_plots.pdf' in FIG_PATH directory
+
+    Note:
+        - Uses A4 page size (210x297mm) with 15mm margins
+        - Each plot is 60x35mm (width x height)
+        - Arranges plots in 3 columns and 7 rows per page
+        - Sorts files numerically by embedded numbers in filenames
+        - Preserves original image aspect ratios
+        - Logs successful PDF generation
+    """
     # Page dimensions and layout constants
     A4_WIDTH, A4_HEIGHT = A4                        # Standard A4 dimensions (210x297mm)
     PLOTS_PER_PAGE = 21                             # 3 columns x 7 rows
@@ -20,10 +51,24 @@ def create_multiple_plots_pdf(config):
     MARGIN_Y = 15 * mm                              # Top/bottom margin
 
     def extract_number(filename):
+        """Extracts numerical value from filename for sorting.
+        
+        Args:
+            filename (str): The filename to process
+            
+        Returns:
+            int: Extracted number or 0 if no number found
+        """
         match = re.search(r'\d+', filename)
         return int(match.group()) if match else 0
 
     def create_pdf(folder_path, output_pdf_name):
+        """Creates PDF document from PNG files in specified folder.
+        
+        Args:
+            folder_path (str): Directory containing PNG files
+            output_pdf_name (str): Path for output PDF file
+        """
         # Get and sort PNG files by embedded numbers
         png_files = sorted(
             [f for f in os.listdir(folder_path) if f.endswith('.png')],
@@ -58,6 +103,42 @@ def create_multiple_plots_pdf(config):
     create_pdf(config.SPECTRA_PLOTS, compare_fig)
 
 def create_combined_report_pdf(config):
+    """Generates a comprehensive PDF report combining multiple experimental visualizations.
+
+    Creates a multi-section PDF report containing:
+    1. Individual plots (loss and temperature stability)
+    2. Combined loss vs temperature stability plot
+    3. Detailed temperature profile plot
+    All sections are properly formatted on an A4 page with consistent margins.
+
+    Args:
+        config (object): Configuration object containing:
+            - FIG_PATH: Output directory for PDF
+            - TEMP_PLOTS: Directory for temperature plots
+            - LOSS_EXP: Directory for loss experiment data
+            - TEMP_FILE: Directory for temperature data files
+            - DATA_UTC: Timestamp for file naming
+
+    Returns:
+        None: Generates a PDF file at the specified location
+
+    Raises:
+        FileNotFoundError: If required input files are missing
+        ValueError: If data files are malformed
+        PermissionError: If unable to write output PDF
+
+    Examples:
+        >>> create_combined_report_pdf(config)
+        # Generates 'general_fig.pdf' in FIG_PATH directory
+
+    Note:
+        - Uses A4 page size (210x297mm) with 15mm side margins
+        - Maintains consistent spacing between sections (25mm)
+        - Automatically generates combined loss/temperature plot
+        - Cleans up temporary files after PDF generation
+        - Preserves original image aspect ratios
+        - Logs missing files as errors
+    """
     # Page layout constants
     A4_WIDTH, A4_HEIGHT = A4    # Standard A4 dimensions in points (595x842)
     MARGIN_X = 15 * mm          # Left/right margin

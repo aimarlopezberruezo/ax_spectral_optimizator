@@ -12,12 +12,12 @@ def tester(seed, config, target_file_name, sobol):
     wrong_limits=False
 
     try:
-        #Step 0: Configure logging
-        log_level=log(config=config)
+        # Step 0: Configure logging
+        log_level, mat_log_level, pyvisa_log, plog_level= log(config=config)
         logger = logging.getLogger(__name__)
         logger.info("----------Step 0: Log configuration----------")
-        logger.info(f'Log levels: \n LOG_LEVEL:{log_level}')  
-
+        logger.info(f'Log levels:\nLOG_LEVEL: {log_level}\nMATPLOTLIB_LOG_LEVEL: {mat_log_level}\nPYVISA_LOG_LEVEL: {pyvisa_log}\nPIL_LOG_LEVEL: {plog_level}')
+        
         # Step 1: Load Tester experiment configuration
         logger.info("----------Step 1: Loading configuration...----------")
         logger.info(f'TESTER_EXP: {TESTER_EXP}, PARAM_MATCHING: {PARAM_MATCHING}, MINIMIZE_ERROR: {MINIMIZE_ERROR}')
