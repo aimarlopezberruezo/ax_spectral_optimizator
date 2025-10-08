@@ -5,7 +5,7 @@ from datetime import datetime
 # Project base directory
 BASE_DIR_PATH = os.path.abspath(os.path.join(os.getcwd()))
 #print(BASE_DIR_PATH)
-SRC_DIR_PATH = os.path.join(BASE_DIR_PATH, 'src')
+SRC_DIR_PATH = os.path.join(BASE_DIR_PATH, 'ax_spectral_optimizator_src')
 DOC_DIR_PATH = os.path.join(BASE_DIR_PATH, 'doc')
 RESULTS_DIR_PATH = os.path.join(BASE_DIR_PATH, 'results')
 DATA_DIR_PATH = os.path.join(BASE_DIR_PATH, 'data')

@@ -102,5 +102,5 @@ PIL_LOG_LEVEL = "WARNING"
 #----------------------------------------------- MAIL-SENDER CONFIGURATION-----------------------------------------------
 #------------------------------------------------------------------------------------------------------------------------
 
-recipients = ["utike112@gmail.com", "alopez419@ikasle.ehu.eus"]
+recipients = ["aimarlopezberruezo@gmail.com", "alopez419@ikasle.ehu.eus"]
 #recipients.append("grzelczak.marek@gmail.com")
