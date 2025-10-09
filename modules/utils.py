@@ -2541,7 +2541,11 @@ def lowest_error_file(lw_error_file, target, seed, error_file):
         - File writing is atomic (single write operation per call)
         - New entries are separated by newlines (no additional delimiters)
     """
-    _,min_error=find_lowest_loss(error_file)
+    if REAL_EXP:
+        _,min_error=find_lowest_loss(error_file)
+    else:
+        _,min_error=find_lowest_error(error_file)
+    min_error=str(min_error)
     with open(lw_error_file, 'a') as file:
         logger.debug(f'File opened successfully for writing (append mode): {lw_error_file}')
         file.write(f'Target --> {target}\nSeed --> {seed}\nLowest_error --> {min_error}\n')

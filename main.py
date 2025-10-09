@@ -80,4 +80,4 @@ if __name__ == '__main__':
                         send_files_gmail(seed, config, target_val, sobol)
     data=parse_error_data(config)
     plot_all_targets_errors(data, config)
-    send_experiment_completion_notification(config,sobol)
+    send_experiment_completion_notification(config)
