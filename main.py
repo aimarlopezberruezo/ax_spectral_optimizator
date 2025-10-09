@@ -2,13 +2,12 @@
 import logging
 from config.path_declarations import PROYECT_BASE_PATHS#, FIG_PATH
 from config.experiment_settings import TESTER_EXP, REAL_EXP, SPECTRAL_MATCHING, MAXIMIZE_TEMP, SEED, NUM_TRIALS_SOBOL, target_spec_name, tv_name, sol_spec_name
-from modules.utils import create_base_folders
+from modules.utils import create_base_folders, send_files_gmail, send_experiment_completion_notification, send_error_notification
 from experiments.test_experiment import tester
 from experiments.spectral_matching import real_match
 from experiments.maximize_temperature import real_temp
 from hardware.G2VPico.G2VPico import G2VPicoController
 from figs_creator import create_figs
-from mail_sender import *
 from config.path_declarations import paths
 from modules.utils import parse_error_data, plot_all_targets_errors
 import traceback
@@ -78,7 +77,7 @@ if __name__ == '__main__':
                         main(seed, config, target_val, sobol)
                         create_figs(config)
                     finally:
-                        enviar_archivos_por_gmail(seed, config, target_val, sobol)
+                        send_files_gmail(seed, config, target_val, sobol)
     data=parse_error_data(config)
     plot_all_targets_errors(data, config)
     send_experiment_completion_notification(config,sobol)
