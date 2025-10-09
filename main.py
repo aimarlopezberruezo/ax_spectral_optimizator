@@ -2,12 +2,11 @@
 import logging
 from config.path_declarations import PROYECT_BASE_PATHS#, FIG_PATH
 from config.experiment_settings import TESTER_EXP, REAL_EXP, SPECTRAL_MATCHING, MAXIMIZE_TEMP, SEED, NUM_TRIALS_SOBOL, target_spec_name, tv_name, sol_spec_name
-from modules.utils import create_base_folders, send_files_gmail, send_experiment_completion_notification, send_error_notification
+from modules.utils import create_base_folders, send_files_gmail, send_experiment_completion_notification, send_error_notification, create_figs
 from experiments.test_experiment import tester
 from experiments.spectral_matching import real_match
 from experiments.maximize_temperature import real_temp
 from hardware.G2VPico.G2VPico import G2VPicoController
-from figs_creator import create_figs
 from config.path_declarations import paths
 from modules.utils import parse_error_data, plot_all_targets_errors
 import traceback
@@ -24,8 +23,9 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     logging.critical("Unhandled error", exc_info=(exc_type, exc_value, exc_traceback))
     traceback.print_exception(exc_type, exc_value, exc_traceback)
     
-    # Executes emergency sequence
-    _apagar_g2vpico()
+    # Executes emergency sequence of pico
+    if REAL_EXP:
+        _apagar_g2vpico()
     
     # Sends email notification
     try:
